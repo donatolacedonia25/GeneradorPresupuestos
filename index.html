@@ -7,402 +7,110 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: #f0f4f0; min-height: 100vh; color: #1a1a1a; }
 
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #f0f4f0;
-    min-height: 100vh;
-    color: #1a1a1a;
-  }
+.app-header {
+  background: #1B4332;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.app-header-logo { height: 48px; }
+.app-header-text h1 { color: white; font-size: 16px; font-weight: 800; letter-spacing: 0.06em; }
+.app-header-text p { color: #52B788; font-size: 10px; font-weight: 600; letter-spacing: 0.10em; margin-top: 2px; }
 
-  .app-header {
-    background: #1B4332;
-    padding: 16px 32px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+.tabs { background: #163d2a; display: flex; padding: 0 32px; gap: 4px; border-bottom: 1px solid #0d2419; }
+.tab { padding: 11px 22px; color: #52B788; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; letter-spacing: 0.03em; }
+.tab.active { color: white; border-bottom-color: #52B788; }
 
-  .app-header svg { width: 36px; height: 36px; }
+.container { max-width: 800px; margin: 28px auto; padding: 0 20px 60px; }
 
-  .app-header-text h1 {
-    color: white;
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-  }
+.card { background: white; border-radius: 8px; padding: 24px 28px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+.card h2 { font-size: 11px; font-weight: 700; color: #1B4332; letter-spacing: 0.10em; text-transform: uppercase; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid #e5ede5; }
 
-  .app-header-text p {
-    color: #52B788;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-  }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.form-grid .full { grid-column: 1 / -1; }
 
-  .tabs {
-    background: #1B4332;
-    display: flex;
-    padding: 0 32px;
-    gap: 4px;
-  }
+label { display: block; font-size: 10px; font-weight: 700; color: #2D6A4F; letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 4px; }
+input, textarea, select { width: 100%; padding: 8px 11px; border: 1.5px solid #cdd8cd; border-radius: 5px; font-family: 'Inter', sans-serif; font-size: 13px; color: #1a1a1a; background: #fafcfa; transition: border-color 0.15s; outline: none; }
+input:focus, textarea:focus { border-color: #2D6A4F; background: white; }
+textarea { resize: vertical; min-height: 78px; line-height: 1.5; }
 
-  .tab {
-    padding: 10px 20px;
-    color: #52B788;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    letter-spacing: 0.03em;
-  }
+/* Items table */
+.items-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+.items-table th { background: #1B4332; color: white; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 8px 10px; text-align: left; }
+.items-table th.center { text-align: center; }
+.items-table td { padding: 5px 5px; border-bottom: 1px solid #edf2ed; vertical-align: middle; }
+.items-table td input { border: 1px solid #cdd8cd; padding: 6px 8px; font-size: 13px; background: white; }
+.items-table td input.center { text-align: center; }
+.items-table .total-cell { font-size: 13px; font-weight: 600; color: #1B4332; text-align: right; padding-right: 6px; white-space: nowrap; }
 
-  .tab.active {
-    color: white;
-    border-bottom-color: #52B788;
-  }
+.add-btn { background: none; border: 1.5px dashed #52B788; color: #2D6A4F; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 5px; cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; }
+.add-btn:hover { background: #f0f9f0; }
 
-  .container {
-    max-width: 780px;
-    margin: 32px auto;
-    padding: 0 20px;
-  }
+.remove-btn { background: none; border: none; color: #bbb; cursor: pointer; font-size: 17px; padding: 0 3px; line-height: 1; transition: color 0.15s; }
+.remove-btn:hover { color: #e05252; }
 
-  .card {
-    background: white;
-    border-radius: 8px;
-    padding: 28px 32px;
-    margin-bottom: 16px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
+/* Totales */
+.totales-box { margin-top: 14px; padding-top: 14px; border-top: 2px solid #1B4332; }
+.total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.total-row .label { font-size: 13px; font-weight: 700; color: #1B4332; }
+.total-row .valor { font-size: 16px; font-weight: 800; color: #1B4332; }
+.efectivo-row { display: flex; justify-content: space-between; align-items: center; background: #f0f9f0; padding: 8px 12px; border-radius: 5px; margin-top: 4px; }
+.efectivo-row .label { font-size: 12px; font-weight: 700; color: #2D6A4F; display: flex; align-items: center; gap: 6px; }
+.efectivo-row .label input[type=number] { width: 44px; padding: 3px 6px; font-size: 12px; display: inline; }
+.efectivo-row .valor { font-size: 14px; font-weight: 800; color: #2D6A4F; }
 
-  .card h2 {
-    font-size: 13px;
-    font-weight: 700;
-    color: #1B4332;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e8f0e8;
-  }
+/* Opcionales */
+.opcionales-section { margin-top: 18px; padding-top: 16px; border-top: 1px dashed #cdd8cd; }
+.opcionales-section h3 { font-size: 10px; font-weight: 700; color: #999; letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 10px; }
 
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
+/* Condiciones */
+.condicion-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+.condicion-item input.titulo { width: 150px; flex-shrink: 0; font-weight: 600; }
 
-  .form-grid .full { grid-column: 1 / -1; }
+/* Fotos */
+.fotos-wrapper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 4px; }
+.foto-item {}
+.foto-slot { border: 2px dashed #cdd8cd; border-radius: 6px; aspect-ratio: 4/3; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; overflow: hidden; position: relative; background: #fafcfa; }
+.foto-slot:hover { border-color: #52B788; background: #f0f9f0; }
+.foto-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+.foto-slot .placeholder { color: #aaa; font-size: 11px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.foto-slot input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.foto-remove { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.55); color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: none; align-items: center; justify-content: center; z-index: 2; }
+.foto-slot.has-img .foto-remove { display: flex; }
+.foto-slot.has-img .placeholder { display: none; }
+.foto-caption { margin-top: 5px; }
+.foto-caption input { font-size: 11px; padding: 5px 8px; }
 
-  label {
-    display: block;
-    font-size: 11px;
-    font-weight: 600;
-    color: #2D6A4F;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-  }
+/* Botón */
+.btn-generar { width: 100%; padding: 14px; background: #1B4332; color: white; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; letter-spacing: 0.05em; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s; margin-top: 6px; }
+.btn-generar:hover { background: #2D6A4F; }
+.btn-generar:disabled { background: #aaa; cursor: not-allowed; }
 
-  input, textarea, select {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1.5px solid #d0ddd0;
-    border-radius: 5px;
-    font-family: 'Inter', sans-serif;
-    font-size: 13px;
-    color: #1a1a1a;
-    background: #fafcfa;
-    transition: border-color 0.15s;
-    outline: none;
-  }
+.status { text-align: center; font-size: 13px; color: #2D6A4F; padding: 10px; display: none; }
+.status.visible { display: block; }
+.status.error { color: #c0392b; }
 
-  input:focus, textarea:focus, select:focus {
-    border-color: #2D6A4F;
-    background: white;
-  }
+.info-box { background: #f0f9f0; border-left: 3px solid #52B788; padding: 10px 14px; font-size: 12px; color: #2D6A4F; border-radius: 0 5px 5px 0; margin-bottom: 14px; line-height: 1.6; }
 
-  textarea { resize: vertical; min-height: 80px; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-  /* Tabla de ítems */
-  .items-table { width: 100%; border-collapse: collapse; }
-
-  .items-table th {
-    background: #1B4332;
-    color: white;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 9px 10px;
-    text-align: left;
-  }
-
-  .items-table th.center { text-align: center; }
-
-  .items-table td {
-    padding: 6px 6px;
-    border-bottom: 1px solid #e8f0e8;
-    vertical-align: middle;
-  }
-
-  .items-table td input {
-    border: 1px solid #d0ddd0;
-    padding: 6px 8px;
-    font-size: 13px;
-  }
-
-  .items-table td input.center { text-align: center; }
-
-  .items-table .total-display {
-    font-size: 13px;
-    font-weight: 600;
-    color: #1B4332;
-    text-align: right;
-    padding-right: 8px;
-  }
-
-  .add-item-btn {
-    margin-top: 10px;
-    background: none;
-    border: 1.5px dashed #52B788;
-    color: #2D6A4F;
-    font-size: 12px;
-    font-weight: 600;
-    padding: 7px 14px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .add-item-btn:hover { background: #f0f9f0; }
-
-  .remove-btn {
-    background: none;
-    border: none;
-    color: #ccc;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 0 4px;
-    line-height: 1;
-    transition: color 0.15s;
-  }
-
-  .remove-btn:hover { color: #e05252; }
-
-  /* Condiciones de pago */
-  .condicion-item {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    align-items: flex-start;
-  }
-
-  .condicion-item input.titulo {
-    width: 160px;
-    flex-shrink: 0;
-    font-weight: 600;
-  }
-
-  /* Botón generar */
-  .btn-generar {
-    width: 100%;
-    padding: 14px;
-    background: #1B4332;
-    color: white;
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 8px;
-  }
-
-  .btn-generar:hover { background: #2D6A4F; }
-  .btn-generar:disabled { background: #aaa; cursor: not-allowed; }
-
-  .btn-generar.secondary {
-    background: white;
-    color: #1B4332;
-    border: 2px solid #1B4332;
-    margin-top: 0;
-  }
-
-  .btn-generar.secondary:hover { background: #f0f9f0; }
-
-  .btn-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 8px;
-  }
-
-  .status {
-    text-align: center;
-    font-size: 13px;
-    color: #2D6A4F;
-    padding: 10px;
-    display: none;
-  }
-
-  .status.visible { display: block; }
-  .status.error { color: #c0392b; }
-
-  /* Fotos */
-  .fotos-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-top: 12px;
-  }
-
-  .foto-slot {
-    border: 2px dashed #d0ddd0;
-    border-radius: 6px;
-    aspect-ratio: 4/3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.15s;
-    overflow: hidden;
-    position: relative;
-    background: #fafcfa;
-  }
-
-  .foto-slot:hover { border-color: #52B788; background: #f0f9f0; }
-
-  .foto-slot img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0; left: 0;
-  }
-
-  .foto-slot .placeholder {
-    color: #aaa;
-    font-size: 11px;
-    text-align: center;
-    gap: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .foto-slot input[type=file] {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    cursor: pointer;
-    width: 100%;
-    height: 100%;
-  }
-
-  .foto-caption {
-    margin-top: 6px;
-  }
-
-  .foto-caption input {
-    font-size: 11px;
-    padding: 5px 8px;
-  }
-
-  .foto-remove {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    background: rgba(0,0,0,0.5);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    font-size: 12px;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-  }
-
-  .foto-slot.has-image .foto-remove { display: flex; }
-  .foto-slot.has-image .placeholder { display: none; }
-
-  /* Panel tipo doc para preview info */
-  .info-box {
-    background: #f0f9f0;
-    border-left: 3px solid #52B788;
-    padding: 12px 16px;
-    font-size: 12px;
-    color: #2D6A4F;
-    border-radius: 0 5px 5px 0;
-    margin-bottom: 16px;
-    line-height: 1.6;
-  }
-
-  /* Sección opcionales */
-  .opcionales-section {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px dashed #d0ddd0;
-  }
-
-  .opcionales-section h3 {
-    font-size: 11px;
-    font-weight: 700;
-    color: #888;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .toggle-section {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 14px;
-    cursor: pointer;
-    font-size: 12px;
-    color: #2D6A4F;
-    font-weight: 600;
-  }
-
-  .toggle-section input { width: auto; }
-
-  /* Tab content */
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  @media (max-width: 600px) {
-    .form-grid { grid-template-columns: 1fr; }
-    .fotos-grid { grid-template-columns: repeat(2, 1fr); }
-    .btn-row { grid-template-columns: 1fr; }
-    .container { padding: 0 12px; }
-    .card { padding: 20px 16px; }
-  }
+@media (max-width: 580px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .fotos-wrapper { grid-template-columns: repeat(2, 1fr); }
+  .container { padding: 0 12px 40px; }
+  .card { padding: 18px 14px; }
+}
 </style>
 </head>
 <body>
 
 <div class="app-header">
-  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Logo 212 Paisajismo simplificado - flor/hoja -->
-    <circle cx="50" cy="38" r="12" fill="white" opacity="0.9"/>
-    <ellipse cx="50" cy="20" rx="7" ry="14" fill="white" opacity="0.8"/>
-    <ellipse cx="50" cy="20" rx="7" ry="14" fill="white" opacity="0.8" transform="rotate(60 50 38)"/>
-    <ellipse cx="50" cy="20" rx="7" ry="14" fill="white" opacity="0.8" transform="rotate(120 50 38)"/>
-    <ellipse cx="50" cy="20" rx="7" ry="14" fill="white" opacity="0.8" transform="rotate(180 50 38)"/>
-    <ellipse cx="50" cy="20" rx="7" ry="14" fill="white" opacity="0.8" transform="rotate(240 50 38)"/>
-    <ellipse cx="50" cy="20" rx="7" ry="14" fill="white" opacity="0.8" transform="rotate(300 50 38)"/>
-    <rect x="47" y="50" width="6" height="28" rx="3" fill="white" opacity="0.7"/>
-  </svg>
+  <img class="app-header-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48ZyBmaWxsPSIjNTJCNzg4Ij48ZWxsaXBzZSBjeD0iMTAwIiBjeT0iNTUiIHJ4PSIxNiIgcnk9IjM4IiBvcGFjaXR5PSIwLjkiLz48ZWxsaXBzZSBjeD0iMTAwIiBjeT0iNTUiIHJ4PSIxNiIgcnk9IjM4IiBvcGFjaXR5PSIwLjkiIHRyYW5zZm9ybT0icm90YXRlKDYwIDEwMCAxMDApIi8+PGVsbGlwc2UgY3g9IjEwMCIgY3k9IjU1IiByeD0iMTYiIHJ5PSIzOCIgb3BhY2l0eT0iMC45IiB0cmFuc2Zvcm09InJvdGF0ZSgxMjAgMTAwIDEwMCkiLz48ZWxsaXBzZSBjeD0iMTAwIiBjeT0iNTUiIHJ4PSIxNiIgcnk9IjM4IiBvcGFjaXR5PSIwLjkiIHRyYW5zZm9ybT0icm90YXRlKDE4MCAxMDAgMTAwKSIvPjxlbGxpcHNlIGN4PSIxMDAiIGN5PSI1NSIgcng9IjE2IiByeT0iMzgiIG9wYWNpdHk9IjAuOSIgdHJhbnNmb3JtPSJyb3RhdGUoMjQwIDEwMCAxMDApIi8+PGVsbGlwc2UgY3g9IjEwMCIgY3k9IjU1IiByeD0iMTYiIHJ5PSIzOCIgb3BhY2l0eT0iMC45IiB0cmFuc2Zvcm09InJvdGF0ZSgzMDAgMTAwIDEwMCkiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9IjE4IiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45NSIvPjxyZWN0IHg9Ijk1IiB5PSIxMTgiIHdpZHRoPSIxMCIgaGVpZ2h0PSI0NSIgcng9IjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjgiLz48L2c+PC9zdmc+" alt="212 Paisajismo">
   <div class="app-header-text">
     <h1>212 PAISAJISMO</h1>
     <p>GENERADOR DE DOCUMENTOS</p>
@@ -414,17 +122,12 @@
   <div class="tab" onclick="switchTab('reporte')">Reporte de Mantenimiento</div>
 </div>
 
-<!-- ============================================================ -->
 <!-- TAB PRESUPUESTO -->
-<!-- ============================================================ -->
 <div id="tab-presupuesto" class="tab-content active">
 <div class="container">
 
-  <div class="info-box">
-    Completá los campos y la IA redacta la descripción, objetivos y propuesta. Revisá el PDF antes de enviarlo.
-  </div>
+  <div class="info-box">Completá los campos → la IA redacta descripción, objetivos y propuesta → se descarga el PDF listo para enviar.</div>
 
-  <!-- Datos del cliente -->
   <div class="card">
     <h2>Datos del cliente</h2>
     <div class="form-grid">
@@ -433,11 +136,11 @@
         <input type="text" id="p-nombreCliente" placeholder="Consultorio Odontológico">
       </div>
       <div>
-        <label>Persona de contacto y teléfono</label>
+        <label>Contacto y teléfono</label>
         <input type="text" id="p-contacto" placeholder="Noelia (223 504-4742)">
       </div>
       <div>
-        <label>Ubicación / dirección</label>
+        <label>Dirección / ubicación</label>
         <input type="text" id="p-ubicacion" placeholder="Paso 2725">
       </div>
       <div>
@@ -445,8 +148,8 @@
         <input type="text" id="p-fecha" placeholder="13 de junio de 2026">
       </div>
       <div>
-        <label>Validez (días)</label>
-        <input type="text" id="p-validez" placeholder="60">
+        <label>Validez</label>
+        <input type="text" id="p-validez" placeholder="60 días">
       </div>
       <div>
         <label>Etapa / título del proyecto</label>
@@ -455,7 +158,6 @@
     </div>
   </div>
 
-  <!-- Contexto para la IA -->
   <div class="card">
     <h2>Contexto del proyecto (para la IA)</h2>
     <div class="form-grid">
@@ -465,78 +167,68 @@
       </div>
       <div class="full">
         <label>Descripción del espacio y situación actual</label>
-        <textarea id="p-descripcionEspacio" placeholder="Patio interior en obra. La prioridad es diseñarlo antes de que los albañiles terminen. La vista es directa desde los consultorios."></textarea>
+        <textarea id="p-descripcionEspacio" placeholder="Patio interior en obra, prioridad diseñarlo antes de que los albañiles terminen. Vista directa desde los consultorios."></textarea>
       </div>
       <div class="full">
         <label>Objetivo principal del cliente</label>
-        <input type="text" id="p-objetivo" placeholder="Crear un entorno verde que transmita calma al paciente. Vista desde consultorios.">
+        <input type="text" id="p-objetivo" placeholder="Crear entorno verde que transmita calma al paciente. Vista desde consultorios.">
       </div>
       <div class="full">
         <label>Propuesta técnica (especies, disposición, técnica)</label>
-        <textarea id="p-propuesta" placeholder="Canteros en L y esquineros con Dietes Bicolor y Agapanthus blancos. Cerco vivo de Eugenia Myrtiflora para cubrir muros. Acacia Bayleyana como árbol focal. Espacio 30x30 para futura trepadora de pérgola."></textarea>
+        <textarea id="p-propuesta" placeholder="Canteros en L y esquineros con Dietes Bicolor y Agapanthus blancos. Cerco vivo de Eugenia Myrtiflora. Acacia Bayleyana como árbol focal. Espacio 30x30 para futura trepadora."></textarea>
       </div>
     </div>
   </div>
 
-  <!-- Tabla de ítems -->
   <div class="card">
     <h2>Ítems y precios</h2>
-    <table class="items-table" id="p-items-table">
+    <table class="items-table">
       <thead>
         <tr>
-          <th style="width:38%">Producto / Ítem</th>
-          <th class="center" style="width:12%">Cant.</th>
-          <th style="width:18%">Precio unit.</th>
-          <th style="width:18%">Total</th>
-          <th style="width:6%"></th>
+          <th style="width:40%">Producto / Ítem</th>
+          <th class="center" style="width:11%">Cant.</th>
+          <th style="width:20%">Precio unit.</th>
+          <th style="width:20%">Total</th>
+          <th style="width:5%"></th>
         </tr>
       </thead>
-      <tbody id="p-items-body">
-        <!-- filas dinámicas -->
-      </tbody>
+      <tbody id="p-items-body"></tbody>
     </table>
-    <button class="add-item-btn" onclick="addItem('p')">+ Agregar ítem</button>
+    <button class="add-btn" onclick="addItem()">+ Agregar ítem</button>
 
     <div class="opcionales-section">
-      <h3>Opcionales</h3>
-      <table class="items-table" id="p-opcionales-table">
+      <h3>Opcionales (se muestran aparte en el PDF)</h3>
+      <table class="items-table">
         <thead>
           <tr>
-            <th style="width:38%">Producto / Ítem opcional</th>
-            <th class="center" style="width:12%">Cant.</th>
-            <th style="width:18%">Precio unit.</th>
-            <th style="width:18%">Total</th>
-            <th style="width:6%"></th>
+            <th style="width:40%">Ítem opcional</th>
+            <th class="center" style="width:11%">Cant.</th>
+            <th style="width:20%">Precio unit.</th>
+            <th style="width:20%">Total</th>
+            <th style="width:5%"></th>
           </tr>
         </thead>
-        <tbody id="p-opcionales-body"></tbody>
+        <tbody id="p-opc-body"></tbody>
       </table>
-      <button class="add-item-btn" onclick="addOpcional('p')">+ Agregar opcional</button>
+      <button class="add-btn" onclick="addOpcional()">+ Agregar opcional</button>
     </div>
 
-    <div style="margin-top:20px; padding-top:16px; border-top:2px solid #1B4332;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:14px; font-weight:700; color:#1B4332;">TOTAL</span>
-        <span style="font-size:16px; font-weight:800; color:#1B4332;" id="p-total-display">$0</span>
+    <div class="totales-box">
+      <div class="total-row">
+        <span class="label">TOTAL</span>
+        <span class="valor" id="p-total-display">$0</span>
       </div>
-      <div style="display:flex; gap:12px; align-items:center;">
-        <label style="text-transform:none; font-size:13px; font-weight:600; color:#1a1a1a; display:flex; align-items:center; gap:6px; cursor:pointer;">
-          <input type="checkbox" id="p-efectivo-check" onchange="updateTotals('p')" style="width:auto;">
-          Mostrar precio en efectivo con descuento de
-        </label>
-        <input type="number" id="p-descuento" value="20" min="0" max="50" style="width:60px;" onchange="updateTotals('p')">
-        <span style="font-size:13px;">%</span>
-      </div>
-      <div id="p-efectivo-row" style="display:none; margin-top:8px; display:none;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:13px; font-weight:700; color:#2D6A4F;" id="p-efectivo-label">TOTAL EN EFECTIVO (-20%)</span>
-          <span style="font-size:15px; font-weight:800; color:#2D6A4F;" id="p-efectivo-display">$0</span>
-        </div>
+      <div class="efectivo-row">
+        <span class="label">
+          TOTAL EN EFECTIVO &nbsp;–&nbsp;
+          <input type="number" id="p-descuento" value="20" min="0" max="50" onchange="recalcular()">
+          %
+        </span>
+        <span class="valor" id="p-efectivo-display">$0</span>
       </div>
     </div>
   </div>
 
-  <!-- Condiciones de pago -->
   <div class="card">
     <h2>Condiciones de pago</h2>
     <div id="p-condiciones">
@@ -556,43 +248,35 @@
         <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
       </div>
     </div>
-    <button class="add-item-btn" onclick="addCondicion('p')">+ Agregar condición</button>
+    <button class="add-btn" style="margin-top:8px;" onclick="addCondicion()">+ Agregar condición</button>
   </div>
 
   <div class="card">
     <h2>Notas adicionales (opcional)</h2>
-    <textarea id="p-notas" placeholder="Cualquier aclaración adicional que quieras incluir en el PDF..." style="min-height:60px;"></textarea>
+    <textarea id="p-notas" placeholder="Cualquier aclaración adicional..." style="min-height:56px;"></textarea>
   </div>
 
   <div class="status" id="p-status"></div>
-
-  <div class="btn-row">
-    <button class="btn-generar secondary" onclick="generarPDF('presupuesto')">⬇ Generar PDF (sin IA)</button>
-    <button class="btn-generar" onclick="generarConIA('presupuesto')" id="p-btn-ia">✦ Generar con IA</button>
-  </div>
+  <button class="btn-generar" onclick="generarConIA('presupuesto')" id="p-btn">✦ Generar Presupuesto PDF</button>
 
 </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- TAB REPORTE MANTENIMIENTO -->
-<!-- ============================================================ -->
+<!-- TAB REPORTE -->
 <div id="tab-reporte" class="tab-content">
 <div class="container">
 
-  <div class="info-box">
-    Completá los datos de la visita. La IA redacta el reporte. Podés agregar fotos con epígrafes.
-  </div>
+  <div class="info-box">Completá los datos de la visita, agregá fotos con epígrafes → la IA redacta el reporte → se descarga el PDF.</div>
 
   <div class="card">
     <h2>Datos de la visita</h2>
     <div class="form-grid">
       <div>
         <label>Nombre / empresa cliente</label>
-        <input type="text" id="r-nombreCliente" placeholder="Shell Constitución + El Peñón Truck">
+        <input type="text" id="r-nombreCliente" placeholder="Shell — Dos sucursales">
       </div>
       <div>
-        <label>Persona de contacto</label>
+        <label>Contacto</label>
         <input type="text" id="r-contacto" placeholder="Andrea (223 XXX-XXXX)">
       </div>
       <div>
@@ -601,7 +285,7 @@
       </div>
       <div>
         <label>Ubicación</label>
-        <input type="text" id="r-ubicacion" placeholder="Sucursales Shell MDP">
+        <input type="text" id="r-ubicacion" placeholder="Constitución y La Costa / Ruta 88">
       </div>
     </div>
   </div>
@@ -610,71 +294,57 @@
     <h2>Trabajos realizados (para la IA)</h2>
     <div class="form-grid">
       <div class="full">
-        <label>Tareas de rutina (todas las sucursales)</label>
-        <textarea id="r-tareasRutina" placeholder="Control hídrico — hidratación y revisión de humedad en macetas&#10;Poda de limpieza — retiro de ramas secas y follaje deteriorado"></textarea>
+        <label>Tareas de rutina (todas las sucursales / áreas)</label>
+        <textarea id="r-tareasRutina" placeholder="Control hídrico&#10;Poda de limpieza"></textarea>
       </div>
       <div class="full">
         <label>Trabajos específicos por sucursal o sector</label>
-        <textarea id="r-trabajosEspecificos" placeholder="Shell Don Félix: Reubicación de Strelitzia con hoja quemada por sol. Limpieza profunda de follaje en sector juegos y bajo escaleras.&#10;Shell El Peñón: Limpieza de follaje 100% completada. Poda estética en macetas jardineras del ingreso."></textarea>
+        <textarea id="r-trabajosEspecificos" placeholder="Shell Don Félix: reubicación de Strelitzia con hoja quemada. Limpieza de follaje sector juegos.&#10;Shell El Peñón: limpieza follaje 100%. Poda estética macetas ingreso."></textarea>
       </div>
       <div class="full">
         <label>Novedades o alertas detectadas (opcional)</label>
-        <textarea id="r-novedades" placeholder="Maceta rota en Don Félix sector cafetería. Se informa al cliente para confirmar si desean reposición." style="min-height:60px;"></textarea>
+        <textarea id="r-novedades" placeholder="Maceta rota en cafetería Don Félix. Se informa para confirmar reposición." style="min-height:56px;"></textarea>
       </div>
     </div>
   </div>
 
-  <!-- Fotos -->
   <div class="card">
     <h2>Fotos con epígrafes</h2>
-    <div class="fotos-grid" id="r-fotos-grid">
-      <!-- slots dinámicos -->
-    </div>
-    <button class="add-item-btn" onclick="addFotoSlot()" style="margin-top:16px;">+ Agregar foto</button>
+    <div class="fotos-wrapper" id="r-fotos-wrapper"></div>
+    <button class="add-btn" style="margin-top:14px;" onclick="addFoto()">+ Agregar foto</button>
   </div>
 
   <div class="status" id="r-status"></div>
-
-  <div class="btn-row">
-    <button class="btn-generar secondary" onclick="generarPDF('reporte')">⬇ Generar PDF (sin IA)</button>
-    <button class="btn-generar" onclick="generarConIA('reporte')" id="r-btn-ia">✦ Generar con IA</button>
-  </div>
+  <button class="btn-generar" onclick="generarConIA('reporte')" id="r-btn">✦ Generar Reporte PDF</button>
 
 </div>
 </div>
 
 <script>
-// ============================================================
-// Estado
-// ============================================================
+// ── Estado ──────────────────────────────────────────────
 let pItems = [];
-let pOpcionales = [];
+let pOpc = [];
 let rFotos = [];
 let generatedTexts = { presupuesto: null, reporte: null };
 
-// ============================================================
-// Tabs
-// ============================================================
+// Logo base64 para el PDF (SVG convertido inline)
+const LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><g fill="#52B788"><ellipse cx="100" cy="55" rx="16" ry="38" opacity="0.9"/><ellipse cx="100" cy="55" rx="16" ry="38" opacity="0.9" transform="rotate(60 100 100)"/><ellipse cx="100" cy="55" rx="16" ry="38" opacity="0.9" transform="rotate(120 100 100)"/><ellipse cx="100" cy="55" rx="16" ry="38" opacity="0.9" transform="rotate(180 100 100)"/><ellipse cx="100" cy="55" rx="16" ry="38" opacity="0.9" transform="rotate(240 100 100)"/><ellipse cx="100" cy="55" rx="16" ry="38" opacity="0.9" transform="rotate(300 100 100)"/><circle cx="100" cy="100" r="18" fill="white" opacity="0.95"/><rect x="95" y="118" width="10" height="45" rx="5" fill="white" opacity="0.8"/></g></svg>`;
+
+// ── Tabs ─────────────────────────────────────────────────
 function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (tab==='presupuesto'&&i===0)||(tab==='reporte'&&i===1)));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelector(`.tab:nth-child(${tab === 'presupuesto' ? 1 : 2})`).classList.add('active');
-  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
 }
 
-// ============================================================
-// Ítems presupuesto
-// ============================================================
-function addItem(prefix) {
-  const id = Date.now();
-  pItems.push({ id, producto: '', cantidad: 1, precio: 0 });
+// ── Ítems ─────────────────────────────────────────────────
+function addItem() {
+  pItems.push({ id: Date.now(), producto:'', cantidad:1, precio:0 });
   renderItems();
 }
-
-function addOpcional(prefix) {
-  const id = Date.now();
-  pOpcionales.push({ id, producto: '', cantidad: 1, precio: 0 });
-  renderOpcionales();
+function addOpcional() {
+  pOpc.push({ id: Date.now(), producto:'', cantidad:1, precio:0 });
+  renderOpc();
 }
 
 function renderItems() {
@@ -683,118 +353,83 @@ function renderItems() {
   pItems.forEach((item, idx) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" value="${item.producto}" placeholder="Nombre del ítem" onchange="pItems[${idx}].producto=this.value"></td>
-      <td><input type="number" class="center" value="${item.cantidad}" min="1" onchange="pItems[${idx}].cantidad=+this.value; updateTotals('p')"></td>
-      <td><input type="text" value="${formatPrecioInput(item.precio)}" placeholder="$0" onblur="pItems[${idx}].precio=parsePrecio(this.value); this.value=formatPrecioInput(pItems[${idx}].precio); updateTotals('p')"></td>
-      <td class="total-display">${formatPeso(item.cantidad * item.precio)}</td>
-      <td><button class="remove-btn" onclick="pItems.splice(${idx},1); renderItems(); updateTotals('p')">×</button></td>
-    `;
+      <td><input type="text" value="${esc(item.producto)}" placeholder="Nombre del ítem" oninput="pItems[${idx}].producto=this.value"></td>
+      <td><input type="number" class="center" value="${item.cantidad}" min="1" style="width:100%" oninput="pItems[${idx}].cantidad=+this.value||1; recalcular()"></td>
+      <td><input type="text" value="${item.precio?fmtInput(item.precio):''}" placeholder="$0" onblur="pItems[${idx}].precio=parsePrecio(this.value); this.value=item.precio?fmtInput(item.precio):''; recalcular()"></td>
+      <td class="total-cell">${fmt(item.cantidad*item.precio)}</td>
+      <td><button class="remove-btn" onclick="pItems.splice(${idx},1);renderItems();recalcular()">×</button></td>`;
     tbody.appendChild(tr);
   });
-  updateTotals('p');
+  recalcular();
 }
 
-function renderOpcionales() {
-  const tbody = document.getElementById('p-opcionales-body');
+function renderOpc() {
+  const tbody = document.getElementById('p-opc-body');
   tbody.innerHTML = '';
-  pOpcionales.forEach((item, idx) => {
+  pOpc.forEach((item, idx) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" value="${item.producto}" placeholder="Ítem opcional" onchange="pOpcionales[${idx}].producto=this.value"></td>
-      <td><input type="number" class="center" value="${item.cantidad}" min="1" onchange="pOpcionales[${idx}].cantidad=+this.value; renderOpcionales()"></td>
-      <td><input type="text" value="${formatPrecioInput(item.precio)}" placeholder="$0" onblur="pOpcionales[${idx}].precio=parsePrecio(this.value); this.value=formatPrecioInput(pOpcionales[${idx}].precio); renderOpcionales()"></td>
-      <td class="total-display">${formatPeso(item.cantidad * item.precio)}</td>
-      <td><button class="remove-btn" onclick="pOpcionales.splice(${idx},1); renderOpcionales()">×</button></td>
-    `;
+      <td><input type="text" value="${esc(item.producto)}" placeholder="Ítem opcional" oninput="pOpc[${idx}].producto=this.value"></td>
+      <td><input type="number" class="center" value="${item.cantidad}" min="1" style="width:100%" oninput="pOpc[${idx}].cantidad=+this.value||1; renderOpc()"></td>
+      <td><input type="text" value="${item.precio?fmtInput(item.precio):''}" placeholder="$0" onblur="pOpc[${idx}].precio=parsePrecio(this.value); this.value=item.precio?fmtInput(item.precio):''; renderOpc()"></td>
+      <td class="total-cell">${fmt(item.cantidad*item.precio)}</td>
+      <td><button class="remove-btn" onclick="pOpc.splice(${idx},1);renderOpc()">×</button></td>`;
     tbody.appendChild(tr);
   });
 }
 
-function parsePrecio(str) {
-  return parseFloat(str.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
+function recalcular() {
+  // Actualizar totales en tabla
+  const rows = document.querySelectorAll('#p-items-body tr');
+  rows.forEach((tr, idx) => {
+    const tc = tr.querySelector('.total-cell');
+    if (tc && pItems[idx]) tc.textContent = fmt(pItems[idx].cantidad * pItems[idx].precio);
+  });
+  const total = pItems.reduce((s,i)=>s+i.cantidad*i.precio, 0);
+  const desc = parseInt(document.getElementById('p-descuento').value)||20;
+  document.getElementById('p-total-display').textContent = fmt(total);
+  document.getElementById('p-efectivo-display').textContent = fmt(total*(1-desc/100));
 }
 
-function formatPrecioInput(n) {
-  if (!n) return '';
-  return formatPeso(n);
-}
-
-function formatPeso(n) {
-  if (!n) return '$0';
-  return '$' + Math.round(n).toLocaleString('es-AR');
-}
-
-function updateTotals(prefix) {
-  const total = pItems.reduce((s, i) => s + i.cantidad * i.precio, 0);
-  document.getElementById('p-total-display').textContent = formatPeso(total);
-
-  const checked = document.getElementById('p-efectivo-check').checked;
-  const desc = parseInt(document.getElementById('p-descuento').value) || 20;
-  const efectivoRow = document.getElementById('p-efectivo-row');
-
-  if (checked) {
-    efectivoRow.style.display = 'block';
-    const efectivo = total * (1 - desc / 100);
-    document.getElementById('p-efectivo-label').textContent = `TOTAL EN EFECTIVO (-${desc}%)`;
-    document.getElementById('p-efectivo-display').textContent = formatPeso(efectivo);
-  } else {
-    efectivoRow.style.display = 'none';
-  }
-
-  // actualizar totales en tabla
-  renderItems();
-}
-
-// ============================================================
-// Condiciones de pago
-// ============================================================
-function addCondicion(prefix) {
+// ── Condiciones ───────────────────────────────────────────
+function addCondicion() {
   const div = document.createElement('div');
   div.className = 'condicion-item';
-  div.innerHTML = `
-    <input type="text" class="titulo" placeholder="Título">
-    <input type="text" placeholder="Texto">
-    <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
-  `;
-  document.getElementById(`${prefix}-condiciones`).appendChild(div);
+  div.innerHTML = `<input type="text" class="titulo" placeholder="Título"><input type="text" placeholder="Texto"><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  document.getElementById('p-condiciones').appendChild(div);
 }
 
-// ============================================================
-// Fotos reporte
-// ============================================================
-function addFotoSlot() {
-  const id = Date.now();
-  rFotos.push({ id, dataUrl: null, caption: '', tipo: '' });
+// ── Fotos ─────────────────────────────────────────────────
+function addFoto() {
+  rFotos.push({ id: Date.now(), dataUrl: null, caption: '' });
   renderFotos();
 }
 
 function renderFotos() {
-  const grid = document.getElementById('r-fotos-grid');
-  grid.innerHTML = '';
+  const wrap = document.getElementById('r-fotos-wrapper');
+  wrap.innerHTML = '';
   rFotos.forEach((foto, idx) => {
-    const div = document.createElement('div');
-    div.className = 'foto-slot' + (foto.dataUrl ? ' has-image' : '');
+    const item = document.createElement('div');
+    item.className = 'foto-item';
 
-    div.innerHTML = `
+    const slot = document.createElement('div');
+    slot.className = 'foto-slot' + (foto.dataUrl ? ' has-img' : '');
+    slot.innerHTML = `
       ${foto.dataUrl ? `<img src="${foto.dataUrl}">` : ''}
-      <button class="foto-remove" onclick="rFotos[${idx}].dataUrl=null; renderFotos()">×</button>
+      <button class="foto-remove" onclick="rFotos[${idx}].dataUrl=null;renderFotos()">×</button>
       <div class="placeholder">
-        <svg width="24" height="24" fill="none" stroke="#bbb" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <svg width="26" height="26" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
         <span>Subir foto</span>
       </div>
-      <input type="file" accept="image/*" onchange="loadFoto(event, ${idx})">
-    `;
+      <input type="file" accept="image/*" onchange="loadFoto(event,${idx})">`;
 
-    grid.appendChild(div);
-
-    // Caption
     const capDiv = document.createElement('div');
     capDiv.className = 'foto-caption';
-    capDiv.innerHTML = `
-      <input type="text" placeholder="Epígrafe de la foto..." value="${foto.caption}"
-        onchange="rFotos[${idx}].caption=this.value">
-    `;
-    grid.appendChild(capDiv);
+    capDiv.innerHTML = `<input type="text" placeholder="Epígrafe..." value="${esc(foto.caption)}" oninput="rFotos[${idx}].caption=this.value">`;
+
+    item.appendChild(slot);
+    item.appendChild(capDiv);
+    wrap.appendChild(item);
   });
 }
 
@@ -802,26 +437,27 @@ function loadFoto(event, idx) {
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => {
-    rFotos[idx].dataUrl = e.target.result;
-    renderFotos();
-  };
+  reader.onload = e => { rFotos[idx].dataUrl = e.target.result; renderFotos(); };
   reader.readAsDataURL(file);
 }
 
-// ============================================================
-// Generar con IA
-// ============================================================
+// ── Helpers formato ───────────────────────────────────────
+function parsePrecio(str) { return parseFloat(str.replace(/\./g,'').replace(',','.').replace(/[^0-9.]/g,''))||0; }
+function fmt(n) { return '$'+(Math.round(n)||0).toLocaleString('es-AR'); }
+function fmtInput(n) { return n ? fmt(n) : ''; }
+function esc(s) { return (s||'').replace(/"/g,'&quot;'); }
+
+// ── Generar con IA ────────────────────────────────────────
 async function generarConIA(tipo) {
-  const btnId = tipo === 'presupuesto' ? 'p-btn-ia' : 'r-btn-ia';
-  const statusId = tipo === 'presupuesto' ? 'p-status' : 'r-status';
+  const btnId = tipo==='presupuesto'?'p-btn':'r-btn';
+  const statusId = tipo==='presupuesto'?'p-status':'r-status';
   const btn = document.getElementById(btnId);
   const status = document.getElementById(statusId);
 
   btn.disabled = true;
   btn.textContent = 'Generando...';
   status.className = 'status visible';
-  status.textContent = 'La IA está redactando el contenido...';
+  status.textContent = '✦ La IA está redactando el contenido...';
 
   let datos = {};
   if (tipo === 'presupuesto') {
@@ -851,567 +487,352 @@ async function generarConIA(tipo) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tipo, datos })
     });
-
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Error desconocido');
 
     generatedTexts[tipo] = data.contenido;
-    status.textContent = '✓ Texto generado. Generando PDF...';
-
+    status.textContent = '✓ Texto generado. Armando PDF...';
     await generarPDF(tipo);
 
-  } catch (err) {
+  } catch(err) {
     status.className = 'status visible error';
     status.textContent = 'Error: ' + err.message;
-  } finally {
     btn.disabled = false;
-    btn.textContent = '✦ Generar con IA';
+    btn.textContent = tipo==='presupuesto'?'✦ Generar Presupuesto PDF':'✦ Generar Reporte PDF';
   }
 }
 
-// ============================================================
-// Generar PDF
-// ============================================================
+// ── PDF ───────────────────────────────────────────────────
 async function generarPDF(tipo) {
   const { jsPDF } = window.jspdf;
-
-  if (tipo === 'presupuesto') {
-    await generarPDFPresupuesto(jsPDF);
-  } else {
-    await generarPDFReporte(jsPDF);
-  }
+  if (tipo==='presupuesto') await pdfPresupuesto(jsPDF);
+  else await pdfReporte(jsPDF);
 }
 
-// ============================================================
-// PDF PRESUPUESTO
-// ============================================================
-async function generarPDFPresupuesto(jsPDF) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const W = 210, H = 297;
-  const margin = 16;
-  const contentW = W - margin * 2;
+function svgToDataUrl(svg) {
+  return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+}
 
-  const nombreCliente = document.getElementById('p-nombreCliente').value || 'CLIENTE';
-  const contacto = document.getElementById('p-contacto').value;
-  const ubicacion = document.getElementById('p-ubicacion').value;
-  const fecha = document.getElementById('p-fecha').value;
-  const validez = document.getElementById('p-validez').value;
-  const etapa = document.getElementById('p-etapa').value || 'PROPUESTA DE PAISAJISMO';
-  const notas = document.getElementById('p-notas').value;
+// ── PDF PRESUPUESTO ───────────────────────────────────────
+async function pdfPresupuesto(jsPDF) {
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W=210, H=297, m=16, cW=W-m*2;
+  const GREEN=[27,67,50], GREEN2=[45,106,79], ACCENT=[82,183,136];
 
+  const v = id => document.getElementById(id).value;
+  const nombreCliente = v('p-nombreCliente')||'CLIENTE';
+  const contacto = v('p-contacto');
+  const ubicacion = v('p-ubicacion');
+  const fecha = v('p-fecha');
+  const validez = v('p-validez');
+  const etapa = v('p-etapa');
+  const notas = v('p-notas');
   const textos = generatedTexts.presupuesto || {};
 
-  // ---- PÁGINA 1: Descripción ----
-  let y = 0;
+  // ─ Página 1: Texto ─
+  // Header
+  doc.setFillColor(...GREEN); doc.rect(0,0,W,54,'F');
 
-  // Header verde
-  doc.setFillColor(27, 67, 50);
-  doc.rect(0, 0, W, 52, 'F');
+  // Logo (SVG inline como imagen)
+  try {
+    const logoUrl = svgToDataUrl(LOGO_SVG);
+    doc.addImage(logoUrl,'SVG',W-m-28,4,28,28);
+  } catch(e) {}
 
   // Nombre cliente
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text(nombreCliente.toUpperCase(), margin, 18);
+  doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(255,255,255);
+  doc.text(nombreCliente.toUpperCase(), m, 17);
+
+  // "212 PAISAJISMO"
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+  doc.text('212 PAISAJISMO', W-m, 38, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...ACCENT);
+  doc.text('SOLUCIONES INTEGRALES', W-m, 43, {align:'right'});
 
   // Metadata
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(200, 230, 200);
-  let metaY = 26;
-  if (contacto) { doc.setFont('helvetica', 'bold'); doc.text('Para:', margin, metaY); doc.setFont('helvetica', 'normal'); doc.text(' ' + contacto, margin + 10, metaY); metaY += 6; }
-  if (fecha) { doc.setFont('helvetica', 'bold'); doc.text('Fecha:', margin, metaY); doc.setFont('helvetica', 'normal'); doc.text(' ' + fecha + (validez ? ' | Validez: ' + validez + ' días' : ''), margin + 12, metaY); metaY += 6; }
-  if (ubicacion) { doc.setFont('helvetica', 'bold'); doc.text('Ubicación:', margin, metaY); doc.setFont('helvetica', 'normal'); doc.text(' ' + ubicacion, margin + 20, metaY); }
-
-  // Logo area (derecha del header)
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-  doc.text('212 PAISAJISMO', W - margin, 22, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(82, 183, 136);
-  doc.text('SOLUCIONES INTEGRALES', W - margin, 28, { align: 'right' });
-
-  y = 52;
+  doc.setFontSize(9.5); let my=26;
+  if(contacto){ doc.setFont('helvetica','bold'); doc.setTextColor(200,230,200); doc.text('Para:', m, my); doc.setFont('helvetica','normal'); doc.setTextColor(220,240,220); doc.text(' '+contacto, m+10, my); my+=6; }
+  if(fecha){ doc.setFont('helvetica','bold'); doc.setTextColor(200,230,200); doc.text('Fecha:', m, my); doc.setFont('helvetica','normal'); doc.setTextColor(220,240,220); doc.text(' '+fecha+(validez?' | Validez: '+validez:''), m+12, my); my+=6; }
+  if(ubicacion){ doc.setFont('helvetica','bold'); doc.setTextColor(200,230,200); doc.text('Ubicación:', m, my); doc.setFont('helvetica','normal'); doc.setTextColor(220,240,220); doc.text(' '+ubicacion, m+20, my); }
 
   // Barra subtítulo
-  doc.setFillColor(27, 67, 50);
-  doc.rect(0, y, W, 10, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(255, 255, 255);
-  doc.text(('PROPUESTA DE PAISAJISMO' + (etapa ? ' — ' + etapa.toUpperCase() : '')), W / 2, y + 6.5, { align: 'center' });
+  doc.setFillColor(...GREEN); doc.rect(0,54,W,10,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
+  const subtitulo = 'PROPUESTA DE PAISAJISMO' + (etapa?' — '+etapa.toUpperCase():'');
+  doc.text(subtitulo, W/2, 60.5, {align:'center'});
 
-  y = 72;
+  let y=72;
 
-  // Descripción del proyecto
-  const desc = textos.descripcion || 'Descripción del proyecto generada por IA.';
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(40, 40, 40);
-  const descLines = doc.splitTextToSize(desc, contentW);
-  doc.text(descLines, margin, y);
-  y += descLines.length * 5.5 + 10;
+  // Descripción
+  const textBlock = (titulo, texto) => {
+    if(y>H-40){ doc.addPage(); drawFooter(doc,W,H,m,GREEN,ACCENT); y=20; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...GREEN);
+    doc.text(titulo, m, y); y+=7;
+    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(40,40,40);
+    const lines = doc.splitTextToSize(texto, cW);
+    // Salto de página si no cabe
+    if(y+lines.length*5.5>H-24){ doc.addPage(); drawFooter(doc,W,H,m,GREEN,ACCENT); y=20; }
+    doc.text(lines, m, y); y+=lines.length*5.5+8;
+    doc.setDrawColor(200,220,200); doc.setLineWidth(0.3); doc.line(m,y,W-m,y); y+=10;
+  };
 
-  // Línea separadora
-  doc.setDrawColor(200, 220, 200);
-  doc.line(margin, y, W - margin, y);
-  y += 10;
+  textBlock('Descripción del Proyecto', textos.descripcion||'[Descripción del proyecto]');
+  textBlock('Objetivos del Proyecto', textos.objetivos||'[Objetivos del proyecto]');
 
-  // Objetivos
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(27, 67, 50);
-  doc.text('Objetivos del Proyecto', margin, y);
-  y += 7;
+  // Propuesta (sin línea al final)
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...GREEN);
+  doc.text('Propuesta', m, y); y+=7;
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(40,40,40);
+  const propLines = doc.splitTextToSize(textos.propuesta||'[Propuesta técnica]', cW);
+  doc.text(propLines, m, y); y+=propLines.length*5.5;
 
-  const obj = textos.objetivos || 'Objetivos del proyecto.';
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(40, 40, 40);
-  const objLines = doc.splitTextToSize(obj, contentW);
-  doc.text(objLines, margin, y);
-  y += objLines.length * 5.5 + 10;
+  if(notas){ y+=8; doc.setFont('helvetica','italic'); doc.setFontSize(9.5); doc.setTextColor(110,110,110); doc.text(doc.splitTextToSize(notas,cW), m, y); }
 
-  doc.setDrawColor(200, 220, 200);
-  doc.line(margin, y, W - margin, y);
-  y += 10;
+  drawFooter(doc,W,H,m,GREEN,ACCENT);
 
-  // Propuesta
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(27, 67, 50);
-  doc.text('Propuesta', margin, y);
-  y += 7;
-
-  const prop = textos.propuesta || 'Propuesta técnica del proyecto.';
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.setTextColor(40, 40, 40);
-  const propLines = doc.splitTextToSize(prop, contentW);
-  doc.text(propLines, margin, y);
-  y += propLines.length * 5.5;
-
-  if (notas) {
-    y += 10;
-    doc.setFont('helvetica', 'italic');
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    const notasLines = doc.splitTextToSize(notas, contentW);
-    doc.text(notasLines, margin, y);
-  }
-
-  // Footer pág 1
-  drawFooter(doc, W, H, margin);
-
-  // ---- PÁGINA 2: Inversión ----
+  // ─ Página 2: Inversión ─
   doc.addPage();
-  y = 0;
+  doc.setFillColor(...GREEN); doc.rect(0,0,W,22,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(255,255,255);
+  doc.text('INVERSIÓN '+nombreCliente.toUpperCase(), W/2, 14, {align:'center'});
 
-  // Header verde pág 2
-  doc.setFillColor(27, 67, 50);
-  doc.rect(0, 0, W, 22, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.setTextColor(255, 255, 255);
-  doc.text('INVERSIÓN ' + nombreCliente.toUpperCase(), W / 2, 14, { align: 'center' });
-
-  y = 32;
-
-  // Tabla ítems
-  const colWidths = [contentW * 0.42, contentW * 0.13, contentW * 0.20, contentW * 0.20];
-  const colX = [margin, margin + colWidths[0], margin + colWidths[0] + colWidths[1], margin + colWidths[0] + colWidths[1] + colWidths[2]];
+  y=32;
+  const cols = [m, m+cW*0.43, m+cW*0.43+cW*0.13, m+cW*0.43+cW*0.13+cW*0.20];
+  const colW = [cW*0.43, cW*0.13, cW*0.20, cW*0.20];
 
   // Header tabla
-  doc.setFillColor(27, 67, 50);
-  doc.rect(margin, y, contentW, 9, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text('PRODUCTO', colX[0] + 2, y + 6);
-  doc.text('CANTIDAD', colX[1] + colWidths[1] / 2, y + 6, { align: 'center' });
-  doc.text('PRECIO', colX[2] + 2, y + 6);
-  doc.text('TOTAL', colX[3] + 2, y + 6);
-  y += 9;
+  doc.setFillColor(...GREEN); doc.rect(m,y,cW,9,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+  ['PRODUCTO','CANTIDAD','PRECIO','TOTAL'].forEach((h,i)=>{
+    if(i===1) doc.text(h, cols[i]+colW[i]/2, y+6, {align:'center'});
+    else if(i>=2) doc.text(h, cols[i]+2, y+6);
+    else doc.text(h, cols[i]+2, y+6);
+  });
+  y+=9;
 
-  // Filas ítems
-  pItems.forEach((item, i) => {
-    if (i % 2 === 0) {
-      doc.setFillColor(245, 250, 245);
-      doc.rect(margin, y, contentW, 9, 'F');
-    }
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(30, 30, 30);
-    doc.text(item.producto.toUpperCase(), colX[0] + 2, y + 6);
-    doc.setFont('helvetica', 'normal');
-    doc.text(String(item.cantidad), colX[1] + colWidths[1] / 2, y + 6, { align: 'center' });
-    doc.text(formatPeso(item.precio), colX[2] + 2, y + 6);
-    doc.text(formatPeso(item.cantidad * item.precio), colX[3] + 2, y + 6);
-    y += 9;
+  // Filas
+  pItems.forEach((item,i)=>{
+    if(i%2===0){ doc.setFillColor(246,251,246); doc.rect(m,y,cW,8.5,'F'); }
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(25,25,25);
+    doc.text((item.producto||'').toUpperCase().substring(0,48), cols[0]+2, y+6);
+    doc.setFont('helvetica','normal');
+    doc.text(String(item.cantidad), cols[1]+colW[1]/2, y+6, {align:'center'});
+    doc.text(fmt(item.precio), cols[2]+2, y+6);
+    doc.text(fmt(item.cantidad*item.precio), cols[3]+2, y+6);
+    y+=8.5;
   });
 
   // Total
-  const total = pItems.reduce((s, i) => s + i.cantidad * i.precio, 0);
-  y += 2;
-  doc.setFillColor(27, 67, 50);
-  doc.rect(margin, y, contentW, 10, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(255, 255, 255);
-  doc.text('TOTAL', colX[0] + 2, y + 7);
-  doc.text(formatPeso(total), W - margin - 2, y + 7, { align: 'right' });
-  y += 10;
+  y+=1;
+  doc.setFillColor(...GREEN); doc.rect(m,y,cW,10,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(255,255,255);
+  const total = pItems.reduce((s,i)=>s+i.cantidad*i.precio,0);
+  doc.text('TOTAL', cols[0]+2, y+7);
+  doc.text(fmt(total), W-m-2, y+7, {align:'right'});
+  y+=10;
 
   // Efectivo
-  const checked = document.getElementById('p-efectivo-check').checked;
-  if (checked) {
-    const desc = parseInt(document.getElementById('p-descuento').value) || 20;
-    const efectivo = total * (1 - desc / 100);
-    doc.setFillColor(45, 106, 79);
-    doc.rect(margin, y, contentW, 9, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`TOTAL EN EFECTIVO (-${desc}%)`, colX[0] + 2, y + 6);
-    doc.text(formatPeso(efectivo), W - margin - 2, y + 6, { align: 'right' });
-    y += 9;
-  }
+  const desc = parseInt(document.getElementById('p-descuento').value)||20;
+  doc.setFillColor(...GREEN2); doc.rect(m,y,cW,9,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(255,255,255);
+  doc.text(`TOTAL EN EFECTIVO (–${desc}%)`, cols[0]+2, y+6);
+  doc.text(fmt(total*(1-desc/100)), W-m-2, y+6, {align:'right'});
+  y+=9;
 
   // Opcionales
-  if (pOpcionales.length > 0) {
-    y += 8;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text('OPCIONALES', margin, y);
-    y += 6;
-
-    pOpcionales.forEach((item, i) => {
-      if (i % 2 === 0) {
-        doc.setFillColor(245, 250, 245);
-        doc.rect(margin, y, contentW, 9, 'F');
-      }
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(30, 30, 30);
-      doc.text(item.producto.toUpperCase(), colX[0] + 2, y + 6);
-      doc.setFont('helvetica', 'normal');
-      doc.text(String(item.cantidad), colX[1] + colWidths[1] / 2, y + 6, { align: 'center' });
-      doc.text(formatPeso(item.precio), colX[2] + 2, y + 6);
-      doc.text(formatPeso(item.cantidad * item.precio), colX[3] + 2, y + 6);
-      y += 9;
+  if(pOpc.length>0){
+    y+=10;
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(120,120,120);
+    doc.text('OPCIONALES', m, y); y+=6;
+    pOpc.forEach((item,i)=>{
+      if(i%2===0){ doc.setFillColor(246,251,246); doc.rect(m,y,cW,8.5,'F'); }
+      doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(25,25,25);
+      doc.text((item.producto||'').toUpperCase().substring(0,48), cols[0]+2, y+6);
+      doc.setFont('helvetica','normal');
+      doc.text(String(item.cantidad), cols[1]+colW[1]/2, y+6, {align:'center'});
+      doc.text(fmt(item.precio), cols[2]+2, y+6);
+      doc.text(fmt(item.cantidad*item.precio), cols[3]+2, y+6);
+      y+=8.5;
     });
   }
 
   // Condiciones de pago
-  y += 12;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(27, 67, 50);
-  doc.text('Condiciones de Pago', margin, y);
-  y += 8;
+  y+=14;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...GREEN);
+  doc.text('Condiciones de Pago', m, y); y+=8;
 
-  const condItems = document.querySelectorAll('#p-condiciones .condicion-item');
-  condItems.forEach(cond => {
-    const inputs = cond.querySelectorAll('input');
-    const titulo = inputs[0].value;
-    const texto = inputs[1].value;
-    if (!titulo && !texto) return;
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(27, 67, 50);
-    const tituloW = doc.getTextWidth('• ' + titulo + ': ');
-    doc.text('• ' + titulo + ': ', margin, y);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40);
-    const textoLines = doc.splitTextToSize(texto, contentW - tituloW);
-    doc.text(textoLines[0], margin + tituloW, y);
-    if (textoLines.length > 1) {
-      for (let i = 1; i < textoLines.length; i++) {
-        y += 5;
-        doc.text(textoLines[i], margin + 4, y);
-      }
-    }
-    y += 7;
+  document.querySelectorAll('#p-condiciones .condicion-item').forEach(cond=>{
+    const ins = cond.querySelectorAll('input');
+    const tit = ins[0].value, txt = ins[1].value;
+    if(!tit&&!txt) return;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(...GREEN);
+    const tw = doc.getTextWidth('• '+tit+': ');
+    doc.text('• '+tit+': ', m, y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(40,40,40);
+    const lines = doc.splitTextToSize(txt, cW-tw);
+    doc.text(lines[0]||'', m+tw, y);
+    for(let i=1;i<lines.length;i++){ y+=5; doc.text(lines[i], m+4, y); }
+    y+=7;
   });
 
-  drawFooter(doc, W, H, margin);
+  drawFooter(doc,W,H,m,GREEN,ACCENT);
 
-  // Guardar
-  const filename = `Presupuesto_212_${(nombreCliente).replace(/\s+/g, '_')}.pdf`;
-  doc.save(filename);
-
-  const status = document.getElementById('p-status');
-  status.className = 'status visible';
-  status.textContent = '✓ PDF descargado: ' + filename;
+  const fname = `Presupuesto_212_${nombreCliente.replace(/\s+/g,'_')}.pdf`;
+  doc.save(fname);
+  const st = document.getElementById('p-status');
+  st.className='status visible'; st.textContent='✓ PDF descargado: '+fname;
+  const btn=document.getElementById('p-btn'); btn.disabled=false; btn.textContent='✦ Generar Presupuesto PDF';
 }
 
-// ============================================================
-// PDF REPORTE
-// ============================================================
-async function generarPDFReporte(jsPDF) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const W = 210, H = 297;
-  const margin = 16;
-  const contentW = W - margin * 2;
+// ── PDF REPORTE ───────────────────────────────────────────
+async function pdfReporte(jsPDF) {
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const W=210, H=297, m=16, cW=W-m*2;
+  const GREEN=[27,67,50], ACCENT=[82,183,136];
 
-  const nombreCliente = document.getElementById('r-nombreCliente').value || 'CLIENTE';
-  const contacto = document.getElementById('r-contacto').value;
-  const fecha = document.getElementById('r-fecha').value;
-  const ubicacion = document.getElementById('r-ubicacion').value;
-
+  const v = id => document.getElementById(id).value;
+  const nombreCliente = v('r-nombreCliente')||'CLIENTE';
+  const contacto = v('r-contacto');
+  const fecha = v('r-fecha');
+  const ubicacion = v('r-ubicacion');
   const textos = generatedTexts.reporte || {};
 
-  let y = 0;
+  // Header
+  doc.setFillColor(...GREEN); doc.rect(0,0,W,54,'F');
+  try { doc.addImage(svgToDataUrl(LOGO_SVG),'SVG',W-m-28,4,28,28); } catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(255,255,255);
+  doc.text(nombreCliente.toUpperCase(), m, 17);
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(255,255,255);
+  doc.text('212 PAISAJISMO', W-m, 38, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...ACCENT);
+  doc.text('SOLUCIONES INTEGRALES', W-m, 43, {align:'right'});
 
-  // Header verde
-  doc.setFillColor(27, 67, 50);
-  doc.rect(0, 0, W, 52, 'F');
+  doc.setFontSize(9.5); let my=26;
+  if(contacto){ doc.setFont('helvetica','bold'); doc.setTextColor(200,230,200); doc.text('Para:', m, my); doc.setFont('helvetica','normal'); doc.setTextColor(220,240,220); doc.text(' '+contacto, m+10, my); my+=6; }
+  if(fecha){ doc.setFont('helvetica','bold'); doc.setTextColor(200,230,200); doc.text('Fecha de Visita:', m, my); doc.setFont('helvetica','normal'); doc.setTextColor(220,240,220); doc.text(' '+fecha, m+30, my); my+=6; }
+  if(ubicacion){ doc.setFont('helvetica','bold'); doc.setTextColor(200,230,200); doc.text('Ubicación:', m, my); doc.setFont('helvetica','normal'); doc.setTextColor(220,240,220); doc.text(' '+ubicacion, m+20, my); }
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text(nombreCliente.toUpperCase(), margin, 18);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(200, 230, 200);
-  let metaY = 26;
-  if (contacto) { doc.setFont('helvetica', 'bold'); doc.text('Para:', margin, metaY); doc.setFont('helvetica', 'normal'); doc.text(' ' + contacto, margin + 10, metaY); metaY += 6; }
-  if (fecha) { doc.setFont('helvetica', 'bold'); doc.text('Fecha de Visita:', margin, metaY); doc.setFont('helvetica', 'normal'); doc.text(' ' + fecha, margin + 30, metaY); metaY += 6; }
-  if (ubicacion) { doc.setFont('helvetica', 'bold'); doc.text('Ubicación:', margin, metaY); doc.setFont('helvetica', 'normal'); doc.text(' ' + ubicacion, margin + 20, metaY); }
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-  doc.text('212 PAISAJISMO', W - margin, 22, { align: 'right' });
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(82, 183, 136);
-  doc.text('SOLUCIONES INTEGRALES', W - margin, 28, { align: 'right' });
-
-  y = 62;
+  let y=64;
 
   // Intro
-  const intro = textos.intro || 'Resumen de los trabajos realizados en nuestra última visita.';
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(11);
-  doc.setTextColor(60, 60, 60);
-  doc.text(intro, margin, y);
-  y += 12;
+  const intro = textos.intro||'Resumen de los trabajos realizados en nuestra última visita.';
+  doc.setFont('helvetica','italic'); doc.setFontSize(10.5); doc.setTextColor(65,65,65);
+  doc.text(doc.splitTextToSize(intro, cW), m, y); y+=14;
 
-  // Sección Tareas de Rutina
-  doc.setFillColor(27, 67, 50);
-  doc.rect(margin, y, contentW, 9, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text('TAREAS DE RUTINA', margin + 4, y + 6);
-  y += 14;
+  const seccionBanda = (titulo) => {
+    doc.setFillColor(...GREEN); doc.rect(m,y,cW,9,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+    doc.text(titulo, m+4, y+6); y+=13;
+  };
 
-  const rutina = textos.tareasRutinaTexto || document.getElementById('r-tareasRutina').value;
-  const rutinaItems = rutina.split('|||').map(s => s.trim()).filter(Boolean);
-
-  rutinaItems.forEach(item => {
-    const colonIdx = item.indexOf(':');
-    if (colonIdx > -1) {
-      const titulo = item.substring(0, colonIdx).trim();
-      const desc = item.substring(colonIdx + 1).trim();
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(27, 67, 50);
-      doc.text('• ' + titulo + ': ', margin + 2, y);
-      const w = doc.getTextWidth('• ' + titulo + ': ');
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(desc, contentW - w - 2);
-      doc.text(lines[0], margin + 2 + w, y);
-      if (lines.length > 1) {
-        for (let i = 1; i < lines.length; i++) { y += 5.5; doc.text(lines[i], margin + 6, y); }
-      }
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize('• ' + item, contentW - 4);
-      doc.text(lines, margin + 2, y);
-      y += (lines.length - 1) * 5.5;
+  const renderItems = (texto, raw) => {
+    const src = texto || raw || '';
+    const items = src.split('|||').map(s=>s.trim()).filter(Boolean);
+    if(!items.length) {
+      // si no hay separadores, línea a línea
+      const lines = src.split('\n').map(s=>s.trim()).filter(Boolean);
+      lines.forEach(line=>{
+        doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40);
+        const ls = doc.splitTextToSize('• '+line, cW-4);
+        doc.text(ls, m+2, y); y+=ls.length*5.5+3;
+      });
+      return;
     }
-    y += 8;
-  });
-
-  // Sección Trabajos Específicos
-  y += 2;
-  doc.setFillColor(27, 67, 50);
-  doc.rect(margin, y, contentW, 9, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text('TRABAJOS ESPECÍFICOS', margin + 4, y + 6);
-  y += 14;
-
-  const especificos = textos.trabajosEspecificosTexto || document.getElementById('r-trabajosEspecificos').value;
-  const especificosItems = especificos.split('|||').map(s => s.trim()).filter(Boolean);
-
-  especificosItems.forEach(item => {
-    const colonIdx = item.indexOf(':');
-    if (colonIdx > -1) {
-      const titulo = item.substring(0, colonIdx).trim();
-      const desc = item.substring(colonIdx + 1).trim();
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(27, 67, 50);
-      doc.text('• ' + titulo + ': ', margin + 2, y);
-      const w = doc.getTextWidth('• ' + titulo + ': ');
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize(desc, contentW - w - 2);
-      doc.text(lines[0], margin + 2 + w, y);
-      if (lines.length > 1) {
-        for (let i = 1; i < lines.length; i++) { y += 5.5; doc.text(lines[i], margin + 6, y); }
+    items.forEach(item=>{
+      const ci = item.indexOf(':');
+      if(ci>-1){
+        const tit=item.substring(0,ci).trim(), desc=item.substring(ci+1).trim();
+        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...GREEN);
+        const tw=doc.getTextWidth('• '+tit+': ');
+        doc.text('• '+tit+': ', m+2, y);
+        doc.setFont('helvetica','normal'); doc.setTextColor(40,40,40);
+        const ls=doc.splitTextToSize(desc, cW-tw-4);
+        doc.text(ls[0]||'', m+2+tw, y);
+        for(let i=1;i<ls.length;i++){y+=5.5;doc.text(ls[i],m+6,y);}
+      } else {
+        doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(40,40,40);
+        const ls=doc.splitTextToSize('• '+item, cW-4);
+        doc.text(ls, m+2, y); y+=( ls.length-1)*5.5;
       }
-    } else {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
-      const lines = doc.splitTextToSize('• ' + item, contentW - 4);
-      doc.text(lines, margin + 2, y);
-      y += (lines.length - 1) * 5.5;
-    }
-    y += 8;
-  });
+      y+=8;
+    });
+  };
 
-  // Nota final / novedad
-  if (textos.notaFinal) {
-    y += 4;
-    doc.setFillColor(255, 248, 235);
-    doc.setDrawColor(200, 150, 50);
-    doc.roundedRect(margin, y, contentW, 14, 2, 2, 'FD');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(150, 100, 30);
-    doc.text('⚠ Novedad detectada: ', margin + 4, y + 6);
-    doc.setFont('helvetica', 'normal');
-    const notaLines = doc.splitTextToSize(textos.notaFinal, contentW - 8);
-    doc.text(notaLines[0], margin + 4 + doc.getTextWidth('⚠ Novedad detectada: '), y + 6);
-    if (notaLines.length > 1) doc.text(notaLines.slice(1), margin + 4, y + 11);
-    y += 18;
+  seccionBanda('TAREAS DE RUTINA');
+  renderItems(textos.tareasRutinaTexto, v('r-tareasRutina'));
+  y+=2;
+  seccionBanda('TRABAJOS ESPECÍFICOS');
+  renderItems(textos.trabajosEspecificosTexto, v('r-trabajosEspecificos'));
+
+  if(textos.notaFinal){
+    y+=4;
+    doc.setFillColor(255,248,230); doc.setDrawColor(200,150,50);
+    doc.roundedRect(m,y,cW,13,2,2,'FD');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(140,90,20);
+    doc.text('Novedad detectada: ', m+4, y+8);
+    doc.setFont('helvetica','normal');
+    const nw=doc.getTextWidth('Novedad detectada: ');
+    const nl=doc.splitTextToSize(textos.notaFinal, cW-nw-8);
+    doc.text(nl[0], m+4+nw, y+8);
+    y+=17;
   }
 
-  drawFooter(doc, W, H, margin);
+  drawFooter(doc,W,H,m,GREEN,ACCENT);
 
-  // Página de fotos si hay
-  const fotosConImagen = rFotos.filter(f => f.dataUrl);
-  if (fotosConImagen.length > 0) {
+  // Página fotos
+  const fotosOk=rFotos.filter(f=>f.dataUrl);
+  if(fotosOk.length>0){
     doc.addPage();
+    doc.setFillColor(...GREEN); doc.rect(0,0,W,22,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(255,255,255);
+    doc.text('REPORTE DE IMÁGENES', W/2, 14, {align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(200,230,200);
+    if(fecha) doc.text('Fecha de Visita: '+fecha, m, 28);
+    if(ubicacion) doc.text('Ubicación: '+ubicacion, m, 34);
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(255,255,255);
+    doc.text('212 PAISAJISMO', W-m, 28,{align:'right'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...ACCENT);
+    doc.text('SOLUCIONES INTEGRALES', W-m, 33,{align:'right'});
 
-    // Header fotos
-    doc.setFillColor(27, 67, 50);
-    doc.rect(0, 0, W, 22, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(255, 255, 255);
-    doc.text('REPORTE DE IMÁGENES', W / 2, 14, { align: 'center' });
-
-    // Metadata
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.setTextColor(200, 230, 200);
-    if (fecha) doc.text('Fecha de Visita: ' + fecha, margin, 28);
-    if (ubicacion) doc.text('Ubicación: ' + ubicacion, margin, 34);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.text('212 PAISAJISMO', W - margin, 28, { align: 'right' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(82, 183, 136);
-    doc.text('SOLUCIONES INTEGRALES', W - margin, 33, { align: 'right' });
-
-    y = 44;
-    const imgW = (contentW - 8) / 2;
-    const imgH = imgW * 0.75;
-
-    for (let i = 0; i < fotosConImagen.length; i++) {
-      const foto = fotosConImagen[i];
-      const col = i % 2;
-      const x = margin + col * (imgW + 8);
-
-      if (col === 0 && i > 0) y += imgH + 20;
-
-      if (y + imgH + 20 > H - 20) {
-        drawFooter(doc, W, H, margin);
-        doc.addPage();
-        y = 20;
-      }
-
-      try {
-        const format = foto.dataUrl.includes('png') ? 'PNG' : 'JPEG';
-        doc.addImage(foto.dataUrl, format, x, y, imgW, imgH);
-      } catch (e) {
-        doc.setFillColor(200, 200, 200);
-        doc.rect(x, y, imgW, imgH, 'F');
-      }
-
-      if (foto.caption) {
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(60, 60, 60);
-        const capLines = doc.splitTextToSize(foto.caption, imgW);
-        doc.text(capLines, x, y + imgH + 5);
+    y=42; const iW=(cW-8)/2, iH=iW*0.75;
+    for(let i=0;i<fotosOk.length;i++){
+      const foto=fotosOk[i];
+      const col=i%2, x=m+col*(iW+8);
+      if(col===0&&i>0) y+=iH+18;
+      if(y+iH+18>H-20){ drawFooter(doc,W,H,m,GREEN,ACCENT); doc.addPage(); y=20; }
+      try{
+        const fmt2=foto.dataUrl.includes('png')?'PNG':'JPEG';
+        doc.addImage(foto.dataUrl,fmt2,x,y,iW,iH);
+      }catch(e){ doc.setFillColor(210,210,210); doc.rect(x,y,iW,iH,'F'); }
+      if(foto.caption){
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(60,60,60);
+        doc.text(doc.splitTextToSize(foto.caption,iW), x, y+iH+5);
       }
     }
-
-    drawFooter(doc, W, H, margin);
+    drawFooter(doc,W,H,m,GREEN,ACCENT);
   }
 
-  const filename = `Reporte_212_${(nombreCliente).replace(/\s+/g, '_')}.pdf`;
-  doc.save(filename);
-
-  const status = document.getElementById('r-status');
-  status.className = 'status visible';
-  status.textContent = '✓ PDF descargado: ' + filename;
+  const fname=`Reporte_212_${nombreCliente.replace(/\s+/g,'_')}.pdf`;
+  doc.save(fname);
+  const st=document.getElementById('r-status');
+  st.className='status visible'; st.textContent='✓ PDF descargado: '+fname;
+  const btn=document.getElementById('r-btn'); btn.disabled=false; btn.textContent='✦ Generar Reporte PDF';
 }
 
-// ============================================================
-// Footer
-// ============================================================
-function drawFooter(doc, W, H, margin) {
-  const y = H - 14;
-  doc.setDrawColor(27, 67, 50);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y - 4, W - margin, y - 4);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
-
-  // Pin
-  doc.text('11 de Septiembre 8994 (esq. 212)  |  Mar del Plata, Buenos Aires, Arg', margin, y + 1);
-  doc.text('223 512-8743  |  paisajismo@vivero212.com.ar', W - margin, y + 1, { align: 'right' });
+// ── Footer PDF ─────────────────────────────────────────────
+function drawFooter(doc,W,H,m,GREEN,ACCENT){
+  const fy=H-14;
+  doc.setDrawColor(...GREEN); doc.setLineWidth(0.4);
+  doc.line(m,fy-4,W-m,fy-4);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(90,90,90);
+  doc.text('11 de Septiembre 8994 (esq. 212)  |  Mar del Plata, Buenos Aires, Arg', m, fy+1);
+  doc.text('223 512-8743  |  paisajismo@vivero212.com.ar', W-m, fy+1,{align:'right'});
 }
 
-// ============================================================
-// Init
-// ============================================================
-// Ítems iniciales
-addItem('p');
-addItem('p');
-addItem('p');
-
-// Fotos iniciales
-addFotoSlot();
-addFotoSlot();
-addFotoSlot();
-addFotoSlot();
-
-// Recalcular al cargar
-updateTotals('p');
+// ── Init ───────────────────────────────────────────────────
+addItem(); addItem(); addItem();
+addFoto(); addFoto(); addFoto(); addFoto();
+recalcular();
 </script>
 </body>
 </html>
