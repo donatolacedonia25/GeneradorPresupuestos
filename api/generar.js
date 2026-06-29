@@ -81,7 +81,6 @@ Reglas:
             { inline_data: { mime_type: imagen.mimeType || 'image/jpeg', data: imagen.base64 } }
           ]
         }],
-        generationConfig: { responseMimeType: 'application/json' }
       };
 
       const geminiRes = await geminiRequest(apiKey, body);
@@ -115,7 +114,6 @@ Devolvé SOLO JSON válido:
 
       const body = {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' }
       };
 
       const geminiRes = await geminiRequest(apiKey, body);
@@ -148,7 +146,6 @@ Separar ítems con |||`;
 
       const body = {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' }
       };
 
       const geminiRes = await geminiRequest(apiKey, body);
