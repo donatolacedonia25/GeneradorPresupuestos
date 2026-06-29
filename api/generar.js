@@ -1,103 +1,167 @@
-export default async function handler(req, res) {
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido' });
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ ok: false, error: 'GEMINI_API_KEY no configurada en Vercel' });
+  const { tipo, datos, imagen } = req.body;
 
-  let body;
-  try {
-    body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-  } catch {
-    return res.status(400).json({ ok: false, error: 'Body inválido' });
-  }
+  // ── IMPORTAR ÍTEMS DESDE IMAGEN ──────────────────────────────
+  if (tipo === 'importar_items') {
+    try {
+      if (!imagen || !imagen.base64) {
+        return res.status(400).json({ ok: false, error: 'No se recibió imagen' });
+      }
 
-  const { tipo, datos } = body || {};
-  if (!tipo || !datos) return res.status(400).json({ ok: false, error: 'Faltan campos tipo o datos' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-  let prompt = '';
+      const prompt = `Analizá esta imagen de una tabla de precios (puede ser una captura de Excel, Google Sheets, o similar).
 
-  if (tipo === 'presupuesto') {
-    prompt = `Sos redactor de presupuestos de paisajismo para 212 Paisajismo, empresa profesional de Mar del Plata, Argentina, con 18 años de trayectoria.
+Extraé todos los ítems con sus cantidades y precios unitarios.
 
-Datos del proyecto:
-- Cliente: ${datos.nombreCliente || ''}
-- Ubicación: ${datos.ubicacion || ''}
-- Tipo de espacio: ${datos.tipoEspacio || ''}
-- Objetivo principal del cliente: ${datos.objetivo || ''}
-- Propuesta técnica (especies, disposición, técnica): ${datos.propuesta || ''}
-- Etapa o título del proyecto: ${datos.etapaProyecto || 'Propuesta de Paisajismo'}
-
-Generá exactamente 3 secciones en JSON con este formato. Respondé SOLO con el JSON, sin markdown, sin bloques de código, sin explicaciones:
+Respondé ÚNICAMENTE con un JSON válido, sin markdown ni texto adicional, con este formato exacto:
 {
-  "descripcion": "párrafo de descripción del proyecto (2-4 oraciones). Empezar con 'Tras la visita,' + contexto concreto del espacio. Mencionar el objetivo visual o funcional.",
-  "objetivos": "párrafo de objetivos paisajísticos (2-3 oraciones). Primero lo paisajístico, luego el beneficio práctico.",
-  "propuesta": "párrafo de propuesta técnica (3-5 oraciones). Nombrar especies, disposición, técnica. Cerrar con: 'El servicio incluye provisión, preparación del espacio y colocación final.'"
+  "items": [
+    { "nombre": "Nombre del ítem", "cantidad": 1, "precioUnitario": 50000 },
+    { "nombre": "Otro ítem", "cantidad": 5, "precioUnitario": 12000 }
+  ]
 }
 
-Tono: profesional y cercano, directo, sin relleno. En español rioplatense.`;
+Reglas:
+- El precio unitario debe ser un número sin símbolos ni puntos (ej: 50000, no $50.000)
+- Si el precio aparece como total y hay una cantidad, calculá el precio unitario dividiendo
+- Si no podés determinar la cantidad, usá 1
+- Si no podés leer un precio, ponelo en 0
+- Ignorá filas de totales, subtotales o encabezados
+- Incluí todos los ítems que veas, incluyendo mano de obra o logística si aparecen`;
+
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            mimeType: imagen.mimeType || 'image/jpeg',
+            data: imagen.base64
+          }
+        }
+      ]);
+
+      const text = result.response.text().trim();
+
+      // Limpiar posibles backticks de markdown
+      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(clean);
+      } catch (e) {
+        return res.status(200).json({ ok: false, error: 'No se pudo parsear la respuesta de Gemini: ' + clean.substring(0, 200) });
+      }
+
+      const items = parsed.items || [];
+      if (!Array.isArray(items)) {
+        return res.status(200).json({ ok: false, error: 'Formato inesperado en la respuesta' });
+      }
+
+      return res.status(200).json({ ok: true, items });
+
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: 'Error Gemini Vision: ' + e.message });
+    }
   }
 
-  if (tipo === 'reporte') {
-    prompt = `Sos redactor de reportes de mantenimiento para 212 Paisajismo, empresa de Mar del Plata, Argentina.
+  // ── GENERAR TEXTO PRESUPUESTO ────────────────────────────────
+  if (tipo === 'presupuesto') {
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-Datos de la visita:
+      const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo profesional en Mar del Plata, Argentina.
+Redactá el contenido de un presupuesto de paisajismo con estos datos:
+
+- Tipo de espacio: ${datos.tipoEspacio || ''}
+- Objetivo: ${datos.objetivo || ''}
+- Propuesta técnica: ${datos.propuesta || ''}
+- Etapa del proyecto: ${datos.etapaProyecto || ''}
+
+Estilo de redacción:
+- Descripción: arrancá con "Tras la visita..." + contexto concreto del espacio
+- Objetivos: primero lo paisajístico (cubrir muros, estructurar canteros, impacto visual), luego el beneficio práctico
+- Propuesta: específica, nombrá las especies, disposición, técnica. Cerrá con: "El servicio incluye provisión, preparación del espacio y colocación final."
+- Tono profesional y cercano, sin lenguaje marketinero. Párrafos de 2-4 oraciones.
+
+Respondé ÚNICAMENTE con JSON válido sin markdown:
+{
+  "descripcion": "texto",
+  "objetivos": "texto",
+  "propuesta": "texto"
+}`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
+      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+      let contenido;
+      try {
+        contenido = JSON.parse(clean);
+      } catch (e) {
+        return res.status(200).json({ ok: false, error: 'Error parseando respuesta: ' + clean.substring(0, 200) });
+      }
+
+      return res.status(200).json({ ok: true, contenido });
+
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ── GENERAR TEXTO REPORTE ─────────────────────────────────────
+  if (tipo === 'reporte') {
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo en Mar del Plata, Argentina.
+Redactá un reporte de mantenimiento profesional con estos datos:
+
 - Cliente: ${datos.nombreCliente || ''}
-- Fecha: ${datos.fechaVisita || ''}
+- Fecha de visita: ${datos.fechaVisita || ''}
 - Ubicación: ${datos.ubicacion || ''}
 - Tareas de rutina: ${datos.tareasRutina || ''}
 - Trabajos específicos: ${datos.trabajosEspecificos || ''}
-- Novedades o alertas: ${datos.novedades || 'Ninguna'}
+- Novedades/alertas: ${datos.novedades || ''}
 
-Respondé SOLO con JSON, sin markdown ni bloques de código:
+Estilo: profesional pero cercano. Párrafos cortos. Sin exagerar.
+
+Respondé ÚNICAMENTE con JSON válido sin markdown:
 {
-  "intro": "Una oración que resume la visita.",
-  "tareasRutinaTexto": "Items separados por ||| . Cada item: 'Nombre: descripción.'",
-  "trabajosEspecificosTexto": "Items separados por ||| . Cada item: 'Nombre: descripción.'",
-  "notaFinal": "Si hay novedades importantes, una oración. Si no, string vacío."
+  "intro": "frase introductoria de 1 oración resumiendo la visita",
+  "tareasRutinaTexto": "Tarea 1: descripción|||Tarea 2: descripción",
+  "trabajosEspecificosTexto": "Sucursal/Sector: trabajo realizado|||Otro sector: trabajo realizado",
+  "notaFinal": "novedad o alerta importante, o cadena vacía si no hay"
 }
 
-Tono: profesional, directo. En español.`;
-  }
+Para tareasRutinaTexto y trabajosEspecificosTexto separar cada ítem con |||`;
 
-  if (!prompt) return res.status(400).json({ ok: false, error: 'Tipo no reconocido: ' + tipo });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
+      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
-  try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 1500 }
-        })
+      let contenido;
+      try {
+        contenido = JSON.parse(clean);
+      } catch (e) {
+        return res.status(200).json({ ok: false, error: 'Error parseando respuesta: ' + clean.substring(0, 200) });
       }
-    );
 
-    const geminiData = await geminiRes.json();
+      return res.status(200).json({ ok: true, contenido });
 
-    if (!geminiRes.ok) {
-      const errMsg = geminiData?.error?.message || JSON.stringify(geminiData);
-      return res.status(500).json({ ok: false, error: 'Gemini: ' + errMsg });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
     }
-
-    const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-    try {
-      const parsed = JSON.parse(clean);
-      return res.status(200).json({ ok: true, contenido: parsed });
-    } catch {
-      // Si no parsea como JSON, devolver el texto crudo igual
-      return res.status(200).json({ ok: true, contenido: { descripcion: clean, objetivos: '', propuesta: '' } });
-    }
-
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: 'Error de red: ' + err.message });
   }
-}
+
+  return res.status(400).json({ ok: false, error: 'Tipo no reconocido: ' + tipo });
+};
