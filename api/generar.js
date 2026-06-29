@@ -2,7 +2,7 @@ const https = require('https');
 
 function geminiRequest(apiKey, body) {
   return new Promise((resolve, reject) => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     const data = JSON.stringify(body);
     const req = https.request(url, {
       method: 'POST',
