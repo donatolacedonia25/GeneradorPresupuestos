@@ -2,7 +2,7 @@ const https = require('https');
 
 function geminiRequest(apiKey, body) {
   return new Promise((resolve, reject) => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const data = JSON.stringify(body);
     const req = https.request(url, {
       method: 'POST',
@@ -117,20 +117,4 @@ Redactá un reporte de mantenimiento con estos datos:
 - Trabajos específicos: ${datos.trabajosEspecificos || ''}
 - Novedades: ${datos.novedades || ''}
 
-Estilo: profesional pero cercano. Párrafos cortos.
-
-Devolvé SOLO JSON válido sin texto adicional:
-{"intro":"frase de 1 oración resumiendo la visita","tareasRutinaTexto":"Tarea 1: descripción|||Tarea 2: descripción","trabajosEspecificosTexto":"Sector: trabajo|||Sector: trabajo","notaFinal":"novedad importante o cadena vacía"}
-Separar ítems con |||`;
-
-      const r = await geminiRequest(apiKey, { contents: [{ parts: [{ text: prompt }] }] });
-      const contenido = parseJSON(extractText(r));
-      return res.status(200).json({ ok: true, contenido });
-
-    } catch(e) {
-      return res.status(500).json({ ok: false, error: e.message });
-    }
-  }
-
-  return res.status(400).json({ ok: false, error: 'Tipo no reconocido: ' + tipo });
-};
+Est
