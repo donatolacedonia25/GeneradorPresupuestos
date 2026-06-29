@@ -18,27 +18,26 @@ module.exports = async (req, res) => {
         return res.status(400).json({ ok: false, error: 'No se recibió imagen' });
       }
 
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: 'application/json' }
+      });
 
-      const prompt = `Analizá esta imagen de una tabla de precios (puede ser una captura de Excel, Google Sheets, o similar).
-
+      const prompt = `Analizá esta imagen de una tabla de precios (Excel, Google Sheets o similar).
 Extraé todos los ítems con sus cantidades y precios unitarios.
-
-Respondé ÚNICAMENTE con un JSON válido, sin markdown ni texto adicional, con este formato exacto:
+Devolvé un JSON con este formato exacto:
 {
   "items": [
-    { "nombre": "Nombre del ítem", "cantidad": 1, "precioUnitario": 50000 },
-    { "nombre": "Otro ítem", "cantidad": 5, "precioUnitario": 12000 }
+    { "nombre": "Nombre del ítem", "cantidad": 1, "precioUnitario": 50000 }
   ]
 }
-
 Reglas:
-- El precio unitario debe ser un número sin símbolos ni puntos (ej: 50000, no $50.000)
-- Si el precio aparece como total y hay una cantidad, calculá el precio unitario dividiendo
-- Si no podés determinar la cantidad, usá 1
-- Si no podés leer un precio, ponelo en 0
-- Ignorá filas de totales, subtotales o encabezados
-- Incluí todos los ítems que veas, incluyendo mano de obra o logística si aparecen`;
+- precioUnitario es un número entero sin símbolos (50000, no $50.000)
+- Si ves precio total y cantidad, calculá precio unitario = total / cantidad
+- Si no hay cantidad, usá 1
+- Si no podés leer el precio, ponelo en 0
+- Ignorá filas de TOTAL, subtotal o encabezados de columna
+- Incluí mano de obra o logística si aparece`;
 
       const result = await model.generateContent([
         prompt,
@@ -52,21 +51,22 @@ Reglas:
 
       const text = result.response.text().trim();
 
-      // Limpiar posibles backticks de markdown
-      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
       let parsed;
       try {
-        parsed = JSON.parse(clean);
+        parsed = JSON.parse(text);
       } catch (e) {
-        return res.status(200).json({ ok: false, error: 'No se pudo parsear la respuesta de Gemini: ' + clean.substring(0, 200) });
+        // Intento de rescate: buscar JSON dentro del texto
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) {
+          try { parsed = JSON.parse(match[0]); } catch(e2) {
+            return res.status(200).json({ ok: false, error: 'Respuesta de Gemini no es JSON válido: ' + text.substring(0, 150) });
+          }
+        } else {
+          return res.status(200).json({ ok: false, error: 'Respuesta de Gemini no es JSON válido: ' + text.substring(0, 150) });
+        }
       }
 
       const items = parsed.items || [];
-      if (!Array.isArray(items)) {
-        return res.status(200).json({ ok: false, error: 'Formato inesperado en la respuesta' });
-      }
-
       return res.status(200).json({ ok: true, items });
 
     } catch (e) {
@@ -77,7 +77,10 @@ Reglas:
   // ── GENERAR TEXTO PRESUPUESTO ────────────────────────────────
   if (tipo === 'presupuesto') {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: 'application/json' }
+      });
 
       const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo profesional en Mar del Plata, Argentina.
 Redactá el contenido de un presupuesto de paisajismo con estos datos:
@@ -93,24 +96,12 @@ Estilo de redacción:
 - Propuesta: específica, nombrá las especies, disposición, técnica. Cerrá con: "El servicio incluye provisión, preparación del espacio y colocación final."
 - Tono profesional y cercano, sin lenguaje marketinero. Párrafos de 2-4 oraciones.
 
-Respondé ÚNICAMENTE con JSON válido sin markdown:
-{
-  "descripcion": "texto",
-  "objetivos": "texto",
-  "propuesta": "texto"
-}`;
+Devolvé un JSON con este formato:
+{ "descripcion": "texto", "objetivos": "texto", "propuesta": "texto" }`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
-      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-      let contenido;
-      try {
-        contenido = JSON.parse(clean);
-      } catch (e) {
-        return res.status(200).json({ ok: false, error: 'Error parseando respuesta: ' + clean.substring(0, 200) });
-      }
-
+      const contenido = JSON.parse(text);
       return res.status(200).json({ ok: true, contenido });
 
     } catch (e) {
@@ -121,7 +112,10 @@ Respondé ÚNICAMENTE con JSON válido sin markdown:
   // ── GENERAR TEXTO REPORTE ─────────────────────────────────────
   if (tipo === 'reporte') {
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-1.5-flash',
+        generationConfig: { responseMimeType: 'application/json' }
+      });
 
       const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo en Mar del Plata, Argentina.
 Redactá un reporte de mantenimiento profesional con estos datos:
@@ -135,27 +129,18 @@ Redactá un reporte de mantenimiento profesional con estos datos:
 
 Estilo: profesional pero cercano. Párrafos cortos. Sin exagerar.
 
-Respondé ÚNICAMENTE con JSON válido sin markdown:
+Devolvé un JSON con este formato:
 {
   "intro": "frase introductoria de 1 oración resumiendo la visita",
   "tareasRutinaTexto": "Tarea 1: descripción|||Tarea 2: descripción",
   "trabajosEspecificosTexto": "Sucursal/Sector: trabajo realizado|||Otro sector: trabajo realizado",
   "notaFinal": "novedad o alerta importante, o cadena vacía si no hay"
 }
-
-Para tareasRutinaTexto y trabajosEspecificosTexto separar cada ítem con |||`;
+Separar cada ítem con |||`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
-      const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-
-      let contenido;
-      try {
-        contenido = JSON.parse(clean);
-      } catch (e) {
-        return res.status(200).json({ ok: false, error: 'Error parseando respuesta: ' + clean.substring(0, 200) });
-      }
-
+      const contenido = JSON.parse(text);
       return res.status(200).json({ ok: true, contenido });
 
     } catch (e) {
