@@ -1,12 +1,16 @@
 const https = require('https');
 
-function geminiRequest(apiKey, body) {
+function claudeRequest(apiKey, body) {
   return new Promise((resolve, reject) => {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const data = JSON.stringify(body);
-    const req = https.request(url, {
+    const req = https.request('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) }
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      }
     }, (res) => {
       let raw = '';
       res.on('data', chunk => raw += chunk);
@@ -22,7 +26,7 @@ function geminiRequest(apiKey, body) {
 }
 
 function extractText(r) {
-  try { return r.candidates[0].content.parts[0].text.trim(); }
+  try { return r.content[0].text.trim(); }
   catch(e) { throw new Error(JSON.stringify(r).substring(0, 300)); }
 }
 
@@ -45,8 +49,8 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido' });
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ ok: false, error: 'GEMINI_API_KEY no configurada' });
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ ok: false, error: 'ANTHROPIC_API_KEY no configurada' });
 
   const { tipo, datos, imagen } = req.body;
 
@@ -54,7 +58,23 @@ module.exports = async (req, res) => {
     try {
       if (!imagen || !imagen.base64) return res.status(400).json({ ok: false, error: 'No se recibió imagen' });
 
-      const prompt = `You are a JSON API. Analyze this price table image and extract all items.
+      const r = await claudeRequest(apiKey, {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: imagen.mimeType || 'image/jpeg',
+                data: imagen.base64
+              }
+            },
+            {
+              type: 'text',
+              text: `You are a JSON API. Analyze this price table image and extract all items.
 RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
 Format: {"items":[{"nombre":"Item name","cantidad":1,"precioUnitario":50000}]}
 Rules:
@@ -62,14 +82,10 @@ Rules:
 - If you see total price and quantity, calculate unit price = total / quantity
 - If no quantity, use 1. If price unreadable, use 0
 - Skip rows that are TOTAL, subtotal or column headers
-ONLY JSON. START WITH {`;
-
-      const r = await geminiRequest(apiKey, {
-        contents: [{ parts: [
-          { text: prompt },
-          { inline_data: { mime_type: imagen.mimeType || 'image/jpeg', data: imagen.base64 } }
-        ]}],
-        generationConfig: { temperature: 0, responseMimeType: "application/json" }
+ONLY JSON. START WITH {`
+            }
+          ]
+        }]
       });
 
       const items = parseJSON(extractText(r)).items || [];
@@ -82,7 +98,12 @@ ONLY JSON. START WITH {`;
 
   if (tipo === 'presupuesto') {
     try {
-      const prompt = `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
+      const r = await claudeRequest(apiKey, {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
 RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
 Format: {"descripcion":"text","objetivos":"text","propuesta":"text"}
 
@@ -98,12 +119,10 @@ Style rules:
 - propuesta: specific with species and technique, end with "El servicio incluye provisión, preparación del espacio y colocación final."
 - Tone: professional and close, no marketing language
 
-ONLY JSON. START WITH {`;
-
-      const r = await geminiRequest(apiKey, {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
+ONLY JSON. START WITH {`
+        }]
       });
+
       const contenido = parseJSON(extractText(r));
       return res.status(200).json({ ok: true, contenido });
 
@@ -114,7 +133,12 @@ ONLY JSON. START WITH {`;
 
   if (tipo === 'reporte') {
     try {
-      const prompt = `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
+      const r = await claudeRequest(apiKey, {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        messages: [{
+          role: 'user',
+          content: `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
 RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
 Format: {"intro":"text","tareasRutinaTexto":"Task 1: desc|||Task 2: desc","trabajosEspecificosTexto":"Sector: work|||Sector: work","notaFinal":"text or empty string"}
 
@@ -127,12 +151,10 @@ Write in Spanish. Use this data:
 - Novedades: ${datos.novedades || ''}
 
 Style: professional but close. Short paragraphs. Separate items with |||
-ONLY JSON. START WITH {`;
-
-      const r = await geminiRequest(apiKey, {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
+ONLY JSON. START WITH {`
+        }]
       });
+
       const contenido = parseJSON(extractText(r));
       return res.status(200).json({ ok: true, contenido });
 
