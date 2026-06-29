@@ -62,7 +62,7 @@ Reglas:
             return res.status(200).json({ ok: false, error: 'Respuesta de Gemini no es JSON válido: ' + text.substring(0, 150) });
           }
         } else {
-          return res.status(200).json({ ok: false, error: 'Respuesta de Gemini no es JSON válido: ' + text.substring(0, 150) });
+return res.status(200).json({ ok: false, error: text });
         }
       }
 
