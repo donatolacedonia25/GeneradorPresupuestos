@@ -31,7 +31,9 @@ function parseJSON(text) {
   try { return JSON.parse(clean); }
   catch(e) {
     const m = clean.match(/\{[\s\S]*\}/);
-    if (m) return JSON.parse(m[0]);
+    if (m) { try { return JSON.parse(m[0]); } catch(e2) {} }
+    const m2 = clean.match(/\[[\s\S]*\]/);
+    if (m2) { try { return JSON.parse(m2[0]); } catch(e3) {} }
     throw new Error('JSON inválido: ' + clean.substring(0, 150));
   }
 }
@@ -48,26 +50,26 @@ module.exports = async (req, res) => {
 
   const { tipo, datos, imagen } = req.body;
 
-  // ── IMPORTAR ÍTEMS DESDE IMAGEN ──────────────────────────
   if (tipo === 'importar_items') {
     try {
       if (!imagen || !imagen.base64) return res.status(400).json({ ok: false, error: 'No se recibió imagen' });
 
-      const prompt = `Analizá esta imagen de una tabla de precios (Excel, Google Sheets o similar).
-Extraé todos los ítems con sus cantidades y precios unitarios.
-Devolvé SOLO un JSON válido sin texto adicional:
-{"items":[{"nombre":"Nombre del ítem","cantidad":1,"precioUnitario":50000}]}
-Reglas:
-- precioUnitario es número entero sin símbolos (50000 no $50.000)
-- Si ves precio total y cantidad, calculá precio unitario = total / cantidad
-- Si no hay cantidad usá 1. Si no podés leer el precio ponelo en 0
-- Ignorá filas de TOTAL, subtotal o encabezados de columna`;
+      const prompt = `You are a JSON API. Analyze this price table image and extract all items.
+RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
+Format: {"items":[{"nombre":"Item name","cantidad":1,"precioUnitario":50000}]}
+Rules:
+- precioUnitario must be integer number only, no symbols
+- If you see total price and quantity, calculate unit price = total / quantity
+- If no quantity, use 1. If price unreadable, use 0
+- Skip rows that are TOTAL, subtotal or column headers
+ONLY JSON. START WITH {`;
 
       const r = await geminiRequest(apiKey, {
         contents: [{ parts: [
           { text: prompt },
           { inline_data: { mime_type: imagen.mimeType || 'image/jpeg', data: imagen.base64 } }
-        ]}]
+        ]}],
+        generationConfig: { temperature: 0, responseMimeType: "application/json" }
       });
 
       const items = parseJSON(extractText(r)).items || [];
@@ -78,25 +80,30 @@ Reglas:
     }
   }
 
-  // ── PRESUPUESTO ───────────────────────────────────────────
   if (tipo === 'presupuesto') {
     try {
-      const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo en Mar del Plata, Argentina.
-Redactá contenido para un presupuesto con estos datos:
+      const prompt = `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
+RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
+Format: {"descripcion":"text","objetivos":"text","propuesta":"text"}
+
+Write in Spanish. Use this data:
 - Tipo de espacio: ${datos.tipoEspacio || ''}
 - Objetivo: ${datos.objetivo || ''}
 - Propuesta técnica: ${datos.propuesta || ''}
 - Etapa: ${datos.etapaProyecto || ''}
 
-Estilo: profesional y cercano, sin lenguaje marketinero.
-- Descripción: arrancá con "Tras la visita..." + contexto concreto
-- Objetivos: primero lo paisajístico, luego el beneficio práctico
-- Propuesta: específica con especies y técnica. Cerrá con "El servicio incluye provisión, preparación del espacio y colocación final."
+Style rules:
+- descripcion: start with "Tras la visita..." + concrete context
+- objetivos: first landscaping goals, then practical benefit
+- propuesta: specific with species and technique, end with "El servicio incluye provisión, preparación del espacio y colocación final."
+- Tone: professional and close, no marketing language
 
-Devolvé SOLO JSON válido sin texto adicional:
-{"descripcion":"texto","objetivos":"texto","propuesta":"texto"}`;
+ONLY JSON. START WITH {`;
 
-      const r = await geminiRequest(apiKey, { contents: [{ parts: [{ text: prompt }] }] });
+      const r = await geminiRequest(apiKey, {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
+      });
       const contenido = parseJSON(extractText(r));
       return res.status(200).json({ ok: true, contenido });
 
@@ -105,11 +112,13 @@ Devolvé SOLO JSON válido sin texto adicional:
     }
   }
 
-  // ── REPORTE ───────────────────────────────────────────────
   if (tipo === 'reporte') {
     try {
-      const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo en Mar del Plata, Argentina.
-Redactá un reporte de mantenimiento con estos datos:
+      const prompt = `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
+RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
+Format: {"intro":"text","tareasRutinaTexto":"Task 1: desc|||Task 2: desc","trabajosEspecificosTexto":"Sector: work|||Sector: work","notaFinal":"text or empty string"}
+
+Write in Spanish. Use this data:
 - Cliente: ${datos.nombreCliente || ''}
 - Fecha: ${datos.fechaVisita || ''}
 - Ubicación: ${datos.ubicacion || ''}
@@ -117,4 +126,20 @@ Redactá un reporte de mantenimiento con estos datos:
 - Trabajos específicos: ${datos.trabajosEspecificos || ''}
 - Novedades: ${datos.novedades || ''}
 
-Est
+Style: professional but close. Short paragraphs. Separate items with |||
+ONLY JSON. START WITH {`;
+
+      const r = await geminiRequest(apiKey, {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, responseMimeType: "application/json" }
+      });
+      const contenido = parseJSON(extractText(r));
+      return res.status(200).json({ ok: true, contenido });
+
+    } catch(e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  return res.status(400).json({ ok: false, error: 'Tipo no reconocido: ' + tipo });
+};
