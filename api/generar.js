@@ -1,6 +1,49 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const https = require('https');
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const GEMINI_MODEL = 'gemini-1.5-flash';
+
+function geminiRequest(apiKey, body) {
+  return new Promise((resolve, reject) => {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const data = JSON.stringify(body);
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    };
+    const req = https.request(url, options, (res) => {
+      let raw = '';
+      res.on('data', chunk => raw += chunk);
+      res.on('end', () => {
+        try { resolve(JSON.parse(raw)); }
+        catch(e) { reject(new Error('Respuesta inválida de Gemini: ' + raw.substring(0, 200))); }
+      });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+function extractText(geminiResponse) {
+  try {
+    return geminiResponse.candidates[0].content.parts[0].text.trim();
+  } catch(e) {
+    throw new Error('No se pudo extraer texto de Gemini: ' + JSON.stringify(geminiResponse).substring(0, 200));
+  }
+}
+
+function parseJSON(text) {
+  const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  try { return JSON.parse(clean); }
+  catch(e) {
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error('JSON inválido: ' + clean.substring(0, 150));
+  }
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,141 +52,111 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'Método no permitido' });
 
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(500).json({ ok: false, error: 'GEMINI_API_KEY no configurada' });
+
   const { tipo, datos, imagen } = req.body;
 
-  // ── IMPORTAR ÍTEMS DESDE IMAGEN ──────────────────────────────
+  // ── IMPORTAR ÍTEMS DESDE IMAGEN ──────────────────────────
   if (tipo === 'importar_items') {
     try {
       if (!imagen || !imagen.base64) {
         return res.status(400).json({ ok: false, error: 'No se recibió imagen' });
       }
 
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: { responseMimeType: 'application/json' }
-      });
-
       const prompt = `Analizá esta imagen de una tabla de precios (Excel, Google Sheets o similar).
 Extraé todos los ítems con sus cantidades y precios unitarios.
-Devolvé un JSON con este formato exacto:
-{
-  "items": [
-    { "nombre": "Nombre del ítem", "cantidad": 1, "precioUnitario": 50000 }
-  ]
-}
+Devolvé SOLO un JSON válido con este formato exacto, sin texto adicional:
+{"items":[{"nombre":"Nombre del ítem","cantidad":1,"precioUnitario":50000}]}
 Reglas:
-- precioUnitario es un número entero sin símbolos (50000, no $50.000)
+- precioUnitario es número entero sin símbolos (50000 no $50.000)
 - Si ves precio total y cantidad, calculá precio unitario = total / cantidad
-- Si no hay cantidad, usá 1
-- Si no podés leer el precio, ponelo en 0
-- Ignorá filas de TOTAL, subtotal o encabezados de columna
-- Incluí mano de obra o logística si aparece`;
+- Si no hay cantidad usá 1. Si no podés leer el precio ponelo en 0
+- Ignorá filas de TOTAL, subtotal o encabezados de columna`;
 
-      const result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            mimeType: imagen.mimeType || 'image/jpeg',
-            data: imagen.base64
-          }
-        }
-      ]);
+      const body = {
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: imagen.mimeType || 'image/jpeg', data: imagen.base64 } }
+          ]
+        }],
+        generationConfig: { responseMimeType: 'application/json' }
+      };
 
-      const text = result.response.text().trim();
-
-      let parsed;
-      try {
-        parsed = JSON.parse(text);
-      } catch (e) {
-        // Intento de rescate: buscar JSON dentro del texto
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-          try { parsed = JSON.parse(match[0]); } catch(e2) {
-            return res.status(200).json({ ok: false, error: 'Respuesta de Gemini no es JSON válido: ' + text.substring(0, 150) });
-          }
-        } else {
-          return res.status(200).json({ ok: false, error: 'Respuesta de Gemini no es JSON válido: ' + text.substring(0, 150) });
-        }
-      }
-
+      const geminiRes = await geminiRequest(apiKey, body);
+      const text = extractText(geminiRes);
+      const parsed = parseJSON(text);
       const items = parsed.items || [];
       return res.status(200).json({ ok: true, items });
 
-    } catch (e) {
-      return res.status(500).json({ ok: false, error: 'Error Gemini Vision: ' + e.message });
+    } catch(e) {
+      return res.status(500).json({ ok: false, error: 'Error Vision: ' + e.message });
     }
   }
 
-  // ── GENERAR TEXTO PRESUPUESTO ────────────────────────────────
+  // ── PRESUPUESTO ───────────────────────────────────────────
   if (tipo === 'presupuesto') {
     try {
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: { responseMimeType: 'application/json' }
-      });
-
-      const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo profesional en Mar del Plata, Argentina.
-Redactá el contenido de un presupuesto de paisajismo con estos datos:
-
+      const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo en Mar del Plata, Argentina.
+Redactá contenido para un presupuesto con estos datos:
 - Tipo de espacio: ${datos.tipoEspacio || ''}
 - Objetivo: ${datos.objetivo || ''}
 - Propuesta técnica: ${datos.propuesta || ''}
-- Etapa del proyecto: ${datos.etapaProyecto || ''}
+- Etapa: ${datos.etapaProyecto || ''}
 
-Estilo de redacción:
-- Descripción: arrancá con "Tras la visita..." + contexto concreto del espacio
-- Objetivos: primero lo paisajístico (cubrir muros, estructurar canteros, impacto visual), luego el beneficio práctico
-- Propuesta: específica, nombrá las especies, disposición, técnica. Cerrá con: "El servicio incluye provisión, preparación del espacio y colocación final."
-- Tono profesional y cercano, sin lenguaje marketinero. Párrafos de 2-4 oraciones.
+Estilo: profesional y cercano, sin lenguaje marketinero.
+- Descripción: arrancá con "Tras la visita..." + contexto concreto
+- Objetivos: primero lo paisajístico, luego el beneficio práctico
+- Propuesta: específica con especies y técnica. Cerrá con "El servicio incluye provisión, preparación del espacio y colocación final."
 
-Devolvé un JSON con este formato:
-{ "descripcion": "texto", "objetivos": "texto", "propuesta": "texto" }`;
+Devolvé SOLO JSON válido:
+{"descripcion":"texto","objetivos":"texto","propuesta":"texto"}`;
 
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const contenido = JSON.parse(text);
+      const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' }
+      };
+
+      const geminiRes = await geminiRequest(apiKey, body);
+      const text = extractText(geminiRes);
+      const contenido = parseJSON(text);
       return res.status(200).json({ ok: true, contenido });
 
-    } catch (e) {
+    } catch(e) {
       return res.status(500).json({ ok: false, error: e.message });
     }
   }
 
-  // ── GENERAR TEXTO REPORTE ─────────────────────────────────────
+  // ── REPORTE ───────────────────────────────────────────────
   if (tipo === 'reporte') {
     try {
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: { responseMimeType: 'application/json' }
-      });
-
       const prompt = `Sos el redactor de 212 Paisajismo, empresa de paisajismo en Mar del Plata, Argentina.
-Redactá un reporte de mantenimiento profesional con estos datos:
-
+Redactá un reporte de mantenimiento con estos datos:
 - Cliente: ${datos.nombreCliente || ''}
-- Fecha de visita: ${datos.fechaVisita || ''}
+- Fecha: ${datos.fechaVisita || ''}
 - Ubicación: ${datos.ubicacion || ''}
 - Tareas de rutina: ${datos.tareasRutina || ''}
 - Trabajos específicos: ${datos.trabajosEspecificos || ''}
-- Novedades/alertas: ${datos.novedades || ''}
+- Novedades: ${datos.novedades || ''}
 
-Estilo: profesional pero cercano. Párrafos cortos. Sin exagerar.
+Estilo: profesional pero cercano. Párrafos cortos.
 
-Devolvé un JSON con este formato:
-{
-  "intro": "frase introductoria de 1 oración resumiendo la visita",
-  "tareasRutinaTexto": "Tarea 1: descripción|||Tarea 2: descripción",
-  "trabajosEspecificosTexto": "Sucursal/Sector: trabajo realizado|||Otro sector: trabajo realizado",
-  "notaFinal": "novedad o alerta importante, o cadena vacía si no hay"
-}
-Separar cada ítem con |||`;
+Devolvé SOLO JSON válido:
+{"intro":"frase de 1 oración resumiendo la visita","tareasRutinaTexto":"Tarea 1: descripción|||Tarea 2: descripción","trabajosEspecificosTexto":"Sector: trabajo|||Sector: trabajo","notaFinal":"novedad importante o cadena vacía"}
+Separar ítems con |||`;
 
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const contenido = JSON.parse(text);
+      const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' }
+      };
+
+      const geminiRes = await geminiRequest(apiKey, body);
+      const text = extractText(geminiRes);
+      const contenido = parseJSON(text);
       return res.status(200).json({ ok: true, contenido });
 
-    } catch (e) {
+    } catch(e) {
       return res.status(500).json({ ok: false, error: e.message });
     }
   }
