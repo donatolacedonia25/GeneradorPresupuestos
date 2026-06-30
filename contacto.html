@@ -226,48 +226,44 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
 </div>
 
 <script>
-// ── Datos del CRM (hardcoded — se puede conectar al webhook para leerlos en tiempo real) ──
-const LEADS_DATA = {
-  leads: [
-    {empresa:'Hotel Saint Jeanne',contacto:'Sebastián (gerencia)',estado:'CONTACTADO',rubro:'Hotelería',canal:'Mail',accion:'Env. Mail 2',notas:'Mail 1 enviado. Hotel boutique europeo en Güemes. El verde es clave para su spa.',dias:4},
-    {empresa:'Furia',contacto:'Clara (comercial)',estado:'CONVERSANDO',rubro:'Gastronomía',canal:'Mail',accion:'Env. Mail 2',notas:'Portfolio enviado a Clara (gerenta). Quedó en reenviarlo a admin/compras.',dias:2},
-    {empresa:'Antares',contacto:'Nico Grossi / compras',estado:'CONTACTADO',rubro:'Gastronomía',canal:'Mail',accion:'Env. Mail 2',notas:'Portfolio enviado por mail a compras.',dias:3},
-    {empresa:'Instituto Radiológico',contacto:'Dr. Carlos Capiel (Director)',estado:'CONVERSANDO',rubro:'Salud',canal:'Wpp',accion:'Env. WPP 3',notas:'Portfolio enviado. Le pareció buena idea, dijo que lo comentaría a sus socios. Sin avance concreto.',dias:3},
-    {empresa:'Bosques del Faro Playa',contacto:'Valeria Mateo',estado:'CONVERSANDO',rubro:'Desarrolladora',canal:'Wpp',accion:'Env. Presentación',notas:'Familia dueña de muchos balnearios del sur, desarrolladora en Bs As. Super contacto.',dias:24},
-    {empresa:'Hotel Las Rocas',contacto:'Pilar (encarg. compras)',estado:'NUEVO',rubro:'Hotelería',canal:'Wpp',accion:'Env. WPP 1',notas:'Alberti 9. Sin contacto previo.',dias:0},
-    {empresa:'Medical Check',contacto:'Paola Baragaño (dueña)',estado:'NUEVO',rubro:'Salud',canal:'Wpp',accion:'Env. WPP 1',notas:'Ayudó a Donato en HICE. Warm outreach. Jujuy 917.',dias:0},
-    {empresa:'Lulea Mindful',contacto:'Leo (dueño)',estado:'NUEVO',rubro:'Salud',canal:'Wpp',accion:'Env. WPP 1',notas:'Red Donato. Warm outreach.',dias:0},
-    {empresa:'Laserna Abogados',contacto:'Leandro Laserna (dueño)',estado:'NUEVO',rubro:'Local Comercial',canal:'Wpp',accion:'Env. WPP 1',notas:'Red Donato. Warm.',dias:0},
-    {empresa:'Clínica Pueyrredón',contacto:'Jorge Fortuna (Pte. Directorio)',estado:'NUEVO',rubro:'Salud',canal:'Mail',accion:'Env. Mail 1',notas:'Excelencia médica. Invierten en experiencia del paciente.',dias:0},
-    {empresa:'Hotel Denver',contacto:'Daniela',estado:'CONTACTADO',rubro:'Hotelería',canal:'Mail',accion:'Env. Mail 2',notas:'Arenales 2477.',dias:2},
-    {empresa:'Havanna S.A.',contacto:'Hernán Campagnoli',estado:'NUEVO',rubro:'Industrial',canal:'Mail',accion:'Env. Presentación',notas:'Remodelación activa del edificio corporativo.',dias:0},
-    {empresa:'Neutron',contacto:'Mauro (contacto Donato)',estado:'NUEVO',rubro:'Tecnología',canal:'Wpp',accion:'Env. WPP 1',notas:'Aceleradora. 1800m2 en Distrito Tecnológico. Warm con Mauro.',dias:0},
-    {empresa:'Le Paia Quotidien',contacto:'(sin nombre todavía)',estado:'CONTACTADO',rubro:'Gastronomía',canal:'Mail',accion:'Env. Mail 1',notas:'Contacto presencial en el Aldrey. No hay nombre de decisor todavía.',dias:52},
-  ],
-  embudo: [
-    {empresa:'Consultorio Noelia',contacto:'Noelia',estado:'NEGOCIACIÓN',rubro:'Salud',valor:'$1.000.000',accion:'Esperar Respuesta',notas:'Paso 2725. En negociación activa.',dias:12},
-    {empresa:'Pleamar',contacto:'Lis',estado:'PRESUP. ENVIADO',rubro:'Consorcio Edif.',valor:'',accion:'Esperar Respuesta',notas:'Presupuesto enviado. Red Joaquín.',dias:5},
-    {empresa:'Consorcio Volcomar',contacto:'Gabriela',estado:'PRESUP. ENVIADO',rubro:'Consorcio Edif.',valor:'$1.570.800',accion:'Esperar Respuesta',notas:'Dos presupuestos enviados.',dias:5},
-    {empresa:'Edificio Thames VIII',contacto:'Jorgelina (H. Ledesma)',estado:'PRESUP. ENVIADO',rubro:'Desarrolladora',valor:'$3.605.000',accion:'Esperar Respuesta',notas:'Esperando confirmación. Más de 27 días.',dias:27},
-    {empresa:'Faro Norte',contacto:'Giorgio Benedetti',estado:'PRESUP. ENVIADO',rubro:'Gastronomía',valor:'$1.812.200',accion:'Esperar Respuesta',notas:'Más de 27 días sin respuesta.',dias:27},
-    {empresa:'Clínica 25 de Mayo',contacto:'Agustín (resp. comercial)',estado:'PRESUP. ENVIADO',rubro:'Salud',valor:'$270.000',accion:'Esperar Respuesta',notas:'Esperando confirmación de directivos. 72 años de historia.',dias:27},
-    {empresa:'Part. Pablo (asador)',contacto:'Pablo',estado:'PRESUP. ENVIADO',rubro:'Particular',valor:'$123.000',accion:'Recontactar',notas:'"Perfecto Donato. Cuando mejore el clima lo vamos a hacer". Intención real.',dias:3},
-    {empresa:'Windsor Sastrería',contacto:'Darío Yommi',estado:'EN ESPERA',rubro:'Local Comercial',valor:'$1.012.000',accion:'Recontactar',notas:'Sin liquidez, interesados para el futuro. 53 días.',dias:53},
-    {empresa:'O2 Hotel',contacto:'Esteban Preckel',estado:'EN ESPERA',rubro:'Hotelería',valor:'$591.000',accion:'Recontactar',notas:'Esperando respuesta de superiores. 52 días.',dias:52},
-    {empresa:'Geriatrico Walter',contacto:'Walter',estado:'VISITA',rubro:'Salud',valor:'',accion:'Visita Presencial',notas:'Esperando confirmación para visita.',dias:32},
-    {empresa:'Cepei',contacto:'Gabriel Sapienza',estado:'PRESUP. ENVIADO',rubro:'Oficina',valor:'$270.000',accion:'Esperar Respuesta',notas:'Propuesta para el patio. Esperando info del espacio.',dias:6},
-    {empresa:'Torreón del Monje',contacto:'Natasha',estado:'EN ESPERA',rubro:'Local Comercial',valor:'',accion:'Recontactar',notas:'Quieren plantas nuevas. Definir fecha de colocación.',dias:45},
-  ]
-};
+// ── URL fija del webhook (Apps Script) — usada para leer el CRM en tiempo real ──
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwHJRfMCG9cFswTOMo3TRYQ8FM-_u0x8hBVdCpmembrFW6v4PJRh-1QqhcGQxwtrFNE/exec';
+
+// ── Datos del CRM — se cargan desde el Sheets al abrir la página (ver cargarLeads) ──
+let LEADS_DATA = { leads: [], embudo: [] };
 
 let curTab = 'leads';
 let curLead = null;
 let curTipo = null;
-let filteredLeads = [...LEADS_DATA.leads];
-let filteredEmbudo = [...LEADS_DATA.embudo];
+let filteredLeads = [];
+let filteredEmbudo = [];
 
 function epClass(e){
   return {NUEVO:'e-nuevo',CONTACTADO:'e-contact',CONVERSANDO:'e-conv','PRESUP. ENVIADO':'e-presup','EN ESPERA':'e-espera','NEGOCIACIÓN':'e-neg','VISITA':'e-conv'}[e]||'e-nuevo';
+}
+
+// ── Carga los leads desde el Google Sheets a través del webhook ──
+async function cargarLeads() {
+  document.getElementById('lead-count').textContent = 'cargando...';
+  try {
+    const res = await fetch(WEBHOOK_URL + '?action=leer');
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.msg || 'Error leyendo el CRM');
+
+    LEADS_DATA.leads = data.leads || [];
+    LEADS_DATA.embudo = data.embudo || [];
+    filteredLeads = [...LEADS_DATA.leads];
+    filteredEmbudo = [...LEADS_DATA.embudo];
+
+    renderLeadList(filteredLeads, 'leads-list', 'leads');
+    renderLeadList(filteredEmbudo, 'embudo-list', 'embudo');
+  } catch (e) {
+    document.getElementById('leads-list').innerHTML =
+      '<div class="empty-state">No se pudo cargar el CRM.<br>' + e.message + '</div>';
+    document.getElementById('embudo-list').innerHTML =
+      '<div class="empty-state">No se pudo cargar el CRM.</div>';
+    document.getElementById('lead-count').textContent = 'error al cargar';
+  }
 }
 
 function renderLeadList(arr, containerId, tipo) {
@@ -466,7 +462,7 @@ function toggleReg() {
 }
 
 async function registrarEnvio() {
-  const whUrl = document.getElementById('wh-url').value.trim();
+  const whUrl = document.getElementById('wh-url').value.trim() || WEBHOOK_URL;
   if (!whUrl) { alert('Pegá la URL del webhook del Apps Script.'); return; }
   if (!curLead) { alert('No hay lead seleccionado.'); return; }
 
@@ -514,8 +510,7 @@ function loadWh() {
 }
 
 // Init
-renderLeadList(LEADS_DATA.leads, 'leads-list', 'leads');
-renderLeadList(LEADS_DATA.embudo, 'embudo-list', 'embudo');
+cargarLeads();
 loadWh();
 </script>
 </body>
