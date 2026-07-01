@@ -2,15 +2,35 @@
   "identidad": {
     "empresa": "Paisajismo 212 / Vivero 212",
     "ciudad": "Mar del Plata, Argentina",
-    "historia": "Empresa familiar con 18 años en MDP. Fundada por Alicia, que empezó sola desde su casa viajando en colectivo a buscar plantas. Hoy el equipo es: Alicia (fundadora, 18 años de experiencia), Joaquín (hijo de Alicia, administración y marketing), Agustín (Director de Paisajismo, 11 años de experiencia, 80K seguidores en Instagram educando sobre naturaleza), Donato (Relaciones y Desarrollo Comercial, primer mes). Vivero propio. Catálogo equivalente a Antoniucci (competidor principal) a precios más competitivos. Atención personalizada y cercana.",
-    "clientes_referencia": ["Shell", "Burgwagen", "Tampico", "Shopping Aldrey", "Green Mug Café"]
+    "historia": "Empresa familiar con 18 años en MDP. Fundada por Alicia, que empezó sola desde su casa viajando en colectivo a buscar plantas. Hoy el equipo es: Alicia (fundadora, 18 años de experiencia), Joaquín (hijo de Alicia, administración y marketing), Agustín (Director de Paisajismo, 11 años de experiencia, 80K seguidores en Instagram educando sobre naturaleza), Donato (Relaciones y Desarrollo Comercial). Vivero propio: cultivamos y multiplicamos en maceta, con stock propio, sin depender de intermediarios. No es un vivero de producción a gran escala con grandes pasillos de cultivo — el diferencial real es el acceso directo y la disponibilidad propia, que explican la velocidad de ejecución (caso Tampico: 24hs) y el control de calidad. Catálogo equivalente a Antoniucci (competidor principal) a precios más competitivos. Atención personalizada y cercana.",
+    "clientes_referencia": ["Shell", "Burgwagen", "Tampico", "Shopping Aldrey", "Green Mug Café", "H. Ledesma"]
   },
 
   "voz": {
     "tono": "Humano, cálido, directo. Escrito por una persona real, no por un sistema de marketing. Curiosidad genuina por la empresa contactada. Confianza sin arrogancia. Familiar sin ser informal.",
+    "registro": "Tuteo profesional cálido. Cercano pero con la distancia correcta para alguien que todavía no nos conoce. El objetivo es un punto medio: ni corporativo/IA (ver reglas_absolutas) ni informal de barrio (ver prohibido_informal abajo).",
     "maximo_palabras_wa": 80,
     "maximo_palabras_mail": 150,
-    "parrafos_max_lineas": 3
+    "parrafos_max_lineas": 3,
+    "principio_rector": "El primer contacto abre conversación, no vende. Antes de ofrecer, se pregunta o se presenta con una razón concreta. Nunca se arranca con 'nosotros hacemos / nosotros ofrecemos'.",
+    "prohibido_informal": [
+      "cuando pinte",
+      "no hay drama",
+      "por las dudas",
+      "capaz se me traspapeló",
+      "¿va?",
+      "¿andás con tiempo?",
+      "llegaron a ver",
+      "¿te suena si...?",
+      "quedé pensando (como apertura de frase)"
+    ],
+    "preferido": [
+      "¿Estás con tiempo...",
+      "¿Te gustaría / te interesaría...",
+      "Si te parece bien...",
+      "¿Pudiste ver...",
+      "Quería consultarte / retomar el contacto"
+    ]
   },
 
   "firmas": {
@@ -19,18 +39,25 @@
     "Joaquin": "Joaquín"
   },
 
-  "firmante_por_rubro": {
-    "arquitectura": "Agustin",
-    "desarrolladoras": "Agustin",
-    "constructoras": "Agustin",
-    "hoteles_premium": "Joaquin",
-    "institucional": "Joaquin",
-    "default": "Donato"
+  "firmante": {
+    "seleccion": "SIEMPRE manual, elegida por el usuario antes de generar. El sistema nunca la asume ni la fuerza.",
+    "default_interfaz": "Donato",
+    "sugerencia_por_rubro": {
+      "arquitectura": "Agustin",
+      "desarrolladoras": "Agustin",
+      "constructoras": "Agustin",
+      "hoteles_premium": "Joaquin",
+      "institucional": "Joaquin",
+      "alianza_recomendador": "Agustin",
+      "default": "Donato"
+    },
+    "nota": "La tabla de arriba es solo una sugerencia visual en la interfaz (ej. preseleccionar un radio button). Nunca se autoasigna ni se omite el paso de elección."
   },
 
   "reglas_absolutas": [
     "Escribir como persona real, no como sistema de marketing. Que no suene a IA ni a plantilla.",
-    "NUNCA usar: 'soluciones integrales', 'nos especializamos en', 'quedamos a disposición', 'innovador', 'apasionante', 'increíble'.",
+    "NUNCA usar: 'soluciones integrales', 'nos especializamos en', 'innovador', 'apasionante', 'increíble'.",
+    "'quedamos a disposición' está PROHIBIDA como frase de uso general en cualquier mensaje. EXCEPCIÓN ÚNICA: se permite solo en el cierre de ciclo / toque 3 de Base Leads (ver cierre_ciclo_template), nunca en otro contexto ni sección.",
     "NUNCA listar servicios en el primer contacto. Una frase de quiénes son + razón específica de por qué ellos.",
     "NUNCA diagnosticar la empresa del otro. No sabés cómo funciona su negocio. No se los decís. Llegás a conocer, no a enseñar.",
     "NUNCA usar personalización falsa. 'Vi su empresa y me interesó' sin dato real = spam con nombre propio. Peor que no personalizar.",
@@ -39,7 +66,9 @@
     "Siempre incluir algo específico del destinatario que demuestre que los conocemos.",
     "Siempre incluir una razón concreta de por qué les escribimos a ellos y no a cualquiera.",
     "La firma es solo el nombre. Nada más. El footer del mail ya tiene el resto.",
-    "Warm (vínculo previo o referencia) vale 5-10x más que cold. Tratarlos igual es un error. Si hay conexión, mencionarla en la primera línea."
+    "Warm (vínculo previo o referencia) vale 5-10x más que cold. Tratarlos igual es un error. Si hay conexión, mencionarla en la primera línea.",
+    "Cuando se propone coordinar un día u horario, ofrecer siempre 2 opciones concretas para elegir (ej. '¿el martes o el jueves?'), nunca dejarlo abierto a 'avisame cuando puedas'.",
+    "En Alianzas, nunca acorralar con una sola opción — ofrecer siempre una alternativa suave (ej. 'o si preferís, primero...')."
   ],
 
   "reglas_por_canal": {
@@ -52,7 +81,7 @@
       "tope_lineas": 3,
       "cta_prohibidos_toque_1": ["¿tenés unos minutos?", "¿hablamos?", "¿podemos charlar?", "¿cuándo te viene bien una llamada?"],
       "si_no_responde_48h": "Un solo mensaje de seguimiento. Si tampoco responde: pasar al mail o posponer 60 días.",
-      "si_responde_positivo": "NO seguir por texto. Proponer visita o llamada breve. '¿Esta semana o la que viene te queda mejor?'"
+      "si_responde_positivo": "NO seguir por texto. Proponer visita o llamada breve, con dos opciones concretas. '¿El martes o el jueves te queda mejor?'"
     },
     "mail": {
       "mejores_dias": ["Martes 9-11hs", "Miércoles 9-11hs"],
@@ -95,10 +124,31 @@
     "red_directa": "WhatsApp o llamada personal"
   },
 
+  "timing": {
+    "base_leads": {
+      "cadencia_dias": 21,
+      "toques_maximos": 3,
+      "pausa_dias": 60,
+      "motivo": "Construcción de confianza lenta, típica del B2B relacional en Argentina/LATAM. No hay urgencia real que apurar en frío."
+    },
+    "alianzas": {
+      "cadencia_dias": "21-30",
+      "motivo": "Vínculo de largo plazo — apurar rompe el ángulo de igual a igual."
+    },
+    "embudo_presupuesto_enviado": {
+      "secuencia_dias": [0, 3, 7, 15],
+      "pausa_dias": "45-60",
+      "motivo": "Único momento del pipeline con urgencia real y compromiso ya iniciado por el prospecto."
+    },
+    "embudo_otros_estados": {
+      "cadencia": "sin cadencia fija, sigue el ritmo de la conversación activa"
+    }
+  },
+
   "reglas_por_toque": {
-    "toque_1": "Presentación genuina. Que nos conozcan como personas, no como vendedores. Sin presionar. Sin listar servicios. Personalización real con dato concreto observado. Si es warm: mencionar la conexión en la primera línea.",
+    "toque_1": "Presentación genuina. Que nos conozcan como personas, no como vendedores. Sin presionar. Sin listar servicios. Personalización real con dato concreto observado. Pregunta genuina sobre cómo gestionan hoy el espacio (interno/externo) antes de ofrecer nada. Si es warm: mencionar la conexión en la primera línea.",
     "toque_2": "Seguimiento con valor real — no 'te recuerdo que te escribí'. Reaparecer con algo útil: proyecto similar terminado, observación estacional, insight del sector, referencia local. Ángulo completamente diferente al toque 1.",
-    "toque_3": "Propuesta mínima concreta ('¿Le damos una vuelta al espacio este jueves?') o cierre de ciclo elegante: '¿Esto no es el momento adecuado o simplemente no es algo que les interese ahora? No hay problema con cualquiera de las dos.' La honestidad genera más respuestas que la insistencia."
+    "toque_3": "Propuesta mínima concreta con dos opciones de día, o cierre de ciclo elegante (ver cierre_ciclo_template). La honestidad genera más respuestas que la insistencia."
   },
 
   "estructura_warm": {
@@ -114,7 +164,7 @@
 
   "respuestas_tipicas": {
     "contame_mas": "Enviar brief comercial de 1 página. NO el presupuesto.",
-    "si_me_interesa": "Proponer visita en los próximos 3-4 días hábiles. '¿Qué día de esta semana te queda mejor?'",
+    "si_me_interesa": "Proponer visita en los próximos 3-4 días hábiles, con dos opciones concretas. '¿El [día 1] o el [día 2] te queda mejor?'",
     "ahora_no": "'¿Cuándo sería el mejor momento?' → anotar fecha específica en CRM. Contactar en esa fecha.",
     "ya_tenemos_proveedor": "'¿Están contentos con el proveedor actual?' Si responde: escuchar. Si no: brief + pausa 60d.",
     "precio_sin_visita": "'Depende del espacio — ¿les parece si paso a verlo y les doy un número real?'",
@@ -122,7 +172,7 @@
     "rechazo_directo": "Agradecer con una frase. No insistir. Registrar como Pausa 60d."
   },
 
-  "cierre_ciclo_template": "Hola [Nombre], te escribí algunas veces y entiendo que quizás no es el momento adecuado o simplemente no es algo que les interese ahora. Comprendemos cualquiera de las dos situaciones. Si en algún momento el espacio de [empresa] necesita una mano, acá seguimos. MDP es chica y seguro nos cruzamos. Donato",
+  "cierre_ciclo_template": "Hola [Nombre], te escribí un par de veces y entiendo que quizás no es el momento adecuado o simplemente no es algo que les interese ahora. Si en algún momento les gustaría o les interesa, quedamos a disposición. MDP es chica y seguro nos cruzamos. Donato",
 
   "segmentos": {
     "capex": {
@@ -131,7 +181,7 @@
       "dolor_consciente": "ROI y velocidad de venta.",
       "dolor_inconsciente": "No tener dolores de cabeza en el tramo final. El paisajismo siempre queda para último momento y los plazos aprietan.",
       "nuestro_rol": "Acelerador de ventas. Socio que resuelve el exterior sin supervisión.",
-      "firmante": "Agustin"
+      "firmante_sugerido": "Agustin"
     },
     "opex": {
       "rubros": ["hoteleria", "balnearios", "gastronomia", "franquicias"],
@@ -139,7 +189,7 @@
       "dolor_consciente": "Estética impecable los 365 días, cero reclamos.",
       "dolor_inconsciente": "Miedo a que las instalaciones luzcan abandonadas fuera de temporada.",
       "nuestro_rol": "Gestor de la experiencia del cliente. Mantenimiento preventivo y silencioso.",
-      "firmante": "Donato"
+      "firmante_sugerido": "Donato"
     },
     "institucional": {
       "rubros": ["clinicas", "bancos", "seguros", "universidades"],
@@ -147,19 +197,19 @@
       "dolor_consciente": "Imagen de marca, prestigio, entornos de bajo mantenimiento.",
       "dolor_inconsciente": "Retención de talento, recuperación de pacientes (biofilia), eficiencia operativa.",
       "nuestro_rol": "Custodio de la imagen corporativa.",
-      "firmante": "Joaquin"
+      "firmante_sugerido": "Joaquin"
     },
     "catalizadores": {
       "rubros": ["inmobiliarias"],
       "logica": "No compran el servicio directamente, pero lo recomiendan para destrabar ventas de lotes o propiedades de alta gama.",
       "nuestro_rol": "Herramienta de cierre. Aliado estratégico.",
-      "firmante": "Donato"
+      "firmante_sugerido": "Donato"
     },
     "eventos": {
       "rubros": ["productoras", "organizadores"],
       "logica": "Necesitan ambientación verde puntual, impacto visual.",
       "nuestro_rol": "Proveedor de experiencia sensorial y estética para el evento.",
-      "firmante": "Donato"
+      "firmante_sugerido": "Donato"
     }
   },
 
@@ -167,8 +217,228 @@
     "No prometemos lo que no podemos cumplir.",
     "No somos interesados en el dinero sino en dar un buen servicio.",
     "No somos una empresa grande ni fría.",
-    "No queremos sonar a marketing armado ni a IA."
+    "No queremos sonar a marketing armado ni a IA.",
+    "No somos un vivero de producción a gran escala con grandes pasillos de cultivo — el diferencial real es el stock propio y el acceso directo, no la escala."
   ],
+
+  "secciones": {
+
+    "base_leads": {
+      "intencion": "Abrir conversación en frío. No vender, generar diálogo. Usa reglas_por_toque + reglas_por_canal + canal_por_rubro + segmentos (para el ángulo según rubro) como base común.",
+      "estados": {
+        "NUEVO": {
+          "acciones": ["Visita Presencial", "Env. Mail 1", "Env WPP 1"],
+          "usa_regla_toque": "toque_1",
+          "cta_ejemplos": [
+            "¿Cómo vienen gestionando hoy los espacios verdes — lo resuelven de forma interna o con algún proveedor externo?",
+            "Te escribo porque [dato real observado]. Antes que nada, me gustaría saber cómo lo vienen llevando hoy."
+          ],
+          "regla_dura": "No cerrar el primer mensaje pidiendo mandar información. Se abre pregunta; el material se pasa recién si hay respuesta."
+        },
+        "CONTACTADO": {
+          "acciones": ["Env. Mail 2", "Env WPP 2"],
+          "usa_regla_toque": "toque_2",
+          "cta_ejemplos": [
+            "Quería retomar el contacto. [Dato de valor: estacional / caso similar]. ¿Tiene sentido que lo charlemos?"
+          ]
+        },
+        "SEGUIMIENTO": {
+          "acciones": ["Env. Mail 3", "Env WPP 3", "Cerrar ciclo"],
+          "usa_regla_toque": "toque_3",
+          "usa_template": "cierre_ciclo_template"
+        },
+        "CONVERSANDO": {
+          "acciones": ["Coordinar Visita"],
+          "cta_ejemplos": [
+            "¿Te queda mejor el [día 1] o el [día 2] para pasar a verlo?"
+          ]
+        },
+        "EN_EMBUDO": {
+          "nota": "Mostró interés real, pasa a la sección Embudo Activo."
+        },
+        "PAUSADO": {
+          "acciones": ["Esperar (con fecha)", "Recontactar a los 60 días"],
+          "cta_ejemplos": [
+            "¿Cómo estás? Quería consultarte cómo vienen con los avances de [espacio/proyecto].",
+            "Vi [trigger real observado]. Me acordé de nuestra última conversación / de lo que me comentaste sobre [tema] — ¿sigue en pie la idea?"
+          ]
+        }
+      }
+    },
+
+    "embudo_activo": {
+      "intencion": "Mover el avance de alguien que ya mostró interés real.",
+      "estados": {
+        "CONVERSANDO": {
+          "acciones": ["Llamar", "Env. Wpp"],
+          "cta_ejemplos": [
+            "Lo mejor va a ser verlo en persona. ¿Qué días de esta semana o la próxima te queda mejor?"
+          ]
+        },
+        "VISITA": {
+          "acciones": ["Visita Presencial"],
+          "cta_ejemplos": [
+            "Te escribo para reconfirmar la visita del [día] a las [hora]."
+          ]
+        },
+        "PREP_PROPUESTA": {
+          "acciones": ["Definir Presupuesto"],
+          "nota": "Interno, sin mensaje al cliente en este paso."
+        },
+        "PRESUP_ENVIADO": {
+          "nota": "Sigue la sub-secuencia temporal de 5 pasos definida en 'secuencia_presupuesto' (no es un mensaje único).",
+          "usa_secuencia": "secuencia_presupuesto"
+        },
+        "NEGOCIACION": {
+          "acciones": ["Env. Wpp", "Llamar (solo si hay urgencia marcada)"],
+          "canal_default": "WhatsApp",
+          "angulo": "No es regatear precio, es ajustar la propuesta a lo que el cliente puede/quiere. Tono personal, cercano, predispuesto — nunca defensivo.",
+          "cta_ejemplos": [
+            "Claro que sí, lo vemos con el equipo para ajustar la propuesta por ese lado y te comparto novedades."
+          ]
+        },
+        "EN_ESPERA": {
+          "acciones": ["Reconectar"],
+          "cta_ejemplos": [
+            "Sé que estaban esperando [bloqueo mencionado]. ¿Cómo vienen con eso?"
+          ]
+        },
+        "EN_CLIENTES": {
+          "nota": "Confirmado, pasa a la sección Clientes."
+        },
+        "RECHAZADO": {
+          "nota": "Descartado, sin mensaje de seguimiento."
+        },
+        "VENCIDO": {
+          "acciones": ["Reconectar"],
+          "nota": "Reapertura elegante, mismo criterio que cierre_ciclo_template."
+        }
+      }
+    },
+
+    "alianzas": {
+      "intencion": "Construir vínculo de derivación a largo plazo. Nunca vender, nunca tratar como cliente. NO usa 'segmentos' (capex/opex/etc.) — usa su propia clasificación 'tipos'.",
+      "tipo_aliado_fuente": "columna 'TIPO ALIANZA' en CRM (Recomendador / Canal / Co-creador) — no se infiere",
+      "rubro_fuente": "columna 'RUBRO' en CRM (Arquitectura, Inmobiliaria, Constructora, Interiores, Adm. Consorcio, etc.) — es dato de CONTEXTO. El ángulo del mensaje lo define siempre 'tipo' (columna TIPO ALIANZA), nunca se infiere ni se deriva del rubro. El rubro se usa solo para afinar el dato específico mencionado en el mensaje.",
+      "tipos": {
+        "recomendador": {
+          "definicion": "Nos recomiendan.",
+          "quienes": "Arquitectos, diseñadores de interiores, inmobiliarias",
+          "angulo_central": "Resuelvo el verde de tus proyectos, de igual a igual",
+          "firmante_sugerido": "Agustin"
+        },
+        "canal": {
+          "definicion": "Nos distribuyen sin que lo sepamos — es decir, nos recomiendan de forma pasiva dentro de su propia gestión, sin esfuerzo activo de su parte.",
+          "quienes": "Administración de consorcios, relaciones públicas, contactos estratégicos",
+          "angulo_central": "Un solo proveedor confiable — te simplifica la gestión sin que tengas que ocuparte de nada",
+          "firmante_sugerido": "Donato"
+        },
+        "co_creador": {
+          "definicion": "Ganan cuando nosotros ganamos — hay upside compartido, no solo derivación.",
+          "quienes": "Constructoras, productoras de eventos, multiservicios",
+          "angulo_central": "Cuando el proyecto o evento crece, ganamos los dos — complementariedad real, no solo tareas adyacentes",
+          "firmante_sugerido": "Donato"
+        }
+      },
+      "estados": {
+        "NUEVO": {
+          "acciones": ["Env. Presentación"],
+          "nota_criterio": "En Recomendador y Canal se prioriza presentar primero (dar antes de pedir) en vez de preguntar directamente por su gestión interna en el primer mensaje — pedir ese dato de entrada resulta intrusivo con alguien que recién nos conoce.",
+          "cta_por_tipo": {
+            "recomendador": "Somos Paisajismo 212 — trabajamos el verde de principio a fin en proyectos como los suyos. Me gustaría presentarme y contarte un poco cómo trabajamos, por si en algún momento tiene sentido complementarnos.",
+            "canal": "Somos Paisajismo 212 — trabajamos con administradoras en el mantenimiento de espacios verdes de sus edificios. Me gustaría presentarme y contarte cómo solemos trabajar, por si te sirve tenerlo como opción.",
+            "co_creador": "Somos Paisajismo 212 — en proyectos como los suyos, el verde suele quedar sin resolver hasta el final. Me gustaría presentarme, por si en algún momento tiene sentido complementarnos en algo."
+          }
+        },
+        "1ER_CONTACTO": {
+          "acciones": ["Coordinar Reunión"],
+          "angulo_por_tipo": {
+            "recomendador": "Reunión de igual a igual, café o visita al estudio.",
+            "canal": "Llamada operativa breve.",
+            "co_creador": "Charla sobre complementariedad y upside compartido — cómo ganamos los dos cuando el proyecto/evento crece."
+          }
+        },
+        "CONVERSANDO": {
+          "acciones": ["Invitar al Vivero"],
+          "descripcion": "Jugada diferencial de P212. No se invita a 'ver producción', se invita a conocer la operación real y a Alicia — 18 años de oficio, el factor humano.",
+          "cta_ejemplos": [
+            "Si te interesa, te invito a conocer el vivero para que veas cómo trabajamos — o si te queda más cómodo, te cuento un poco más por acá primero. Lo que prefieras."
+          ]
+        },
+        "ACTIVA": {
+          "acciones": ["Msje de Seguimiento (mantener tibio)", "Colab. en Proyecto (co-proyecto)"],
+          "mantener_tibio": "Cada 30-45 días, sin pedir nada: compartir un proyecto terminado o una novedad real.",
+          "co_proyecto": "Primer trabajo conjunto — diagnóstico gratis a un edificio (Canal), primer proyecto compartido con upside real (Recomendador/Co-creador)."
+        },
+        "PAUSADO": {
+          "acciones": ["Recontactar"],
+          "regla_dura": "Reabrir solo con trigger real (proyecto de ellos que viste, cambio de temporada, obra a la vista). Nunca 'solo para saludar' sin motivo concreto."
+        }
+      }
+    }
+  },
+
+  "secuencia_presupuesto": {
+    "descripcion": "Sub-secuencia obligatoria para el estado PRESUP_ENVIADO en Embudo Activo.",
+    "pasos": [
+      {
+        "dia": 0,
+        "nombre": "Envío",
+        "canal": "WhatsApp (siempre, nunca mail)",
+        "mensaje": "[Nombre], te mando el presupuesto para [proyecto]. Cualquier duda sobre las especies o los materiales, avisame. Quedo disponible."
+      },
+      {
+        "dia": 3,
+        "nombre": "Primer seguimiento",
+        "canal": "WhatsApp",
+        "mensaje": "[Nombre], ¿pudiste ver el presupuesto? Si quedó alguna duda sobre algún punto, lo charlamos cuando quieras."
+      },
+      {
+        "dia": 7,
+        "nombre": "Seguimiento con valor",
+        "canal": "WhatsApp + foto real de obra similar",
+        "mensaje": "[Nombre], pensando en tu proyecto me acordé de un trabajo similar que hicimos en [zona/tipo]. Te mando una foto para que veas cómo quedó. ¿Lo estás evaluando o te surgió alguna duda?",
+        "regla": "La foto tiene que ser real y parecida al proyecto del cliente, nunca ilustrativa."
+      },
+      {
+        "dia": 15,
+        "nombre": "Recontacto final",
+        "canal": "WhatsApp",
+        "mensaje": "[Nombre], ¿cómo estás? Antes de que venza el presupuesto quería saber si seguís interesado o lo dejamos para más adelante. Sin problema, en cualquiera de los dos casos estamos para sumar.",
+        "regla": "Incluir UN solo motivo de urgencia de la lista 'motivos_urgencia', el más honesto para ese caso. Nunca combinar más de uno."
+      },
+      {
+        "dia": "45-60",
+        "nombre": "Archivado FRÍO",
+        "canal": "WhatsApp, sin mencionar el presupuesto",
+        "mensaje": "Hola [Nombre], ¿cómo va el espacio? ¿Pudieron avanzar?",
+        "regla": "No es seguimiento de venta, es mantenimiento de vínculo. Nunca mencionar el presupuesto en este mensaje."
+      }
+    ],
+    "regla_dura_general": "Nunca preguntar '¿lo pudiste ver?' sin agregar algo de valor en los seguimientos previos al día 15."
+  },
+
+  "motivos_urgencia": {
+    "regla": "Elegir UNO solo, el más honesto para el caso. Usar más de uno parece presión de venta y quema la confianza.",
+    "opciones": {
+      "agenda_ejecucion": {
+        "cuando": "Agustín tiene carga real de trabajo próxima.",
+        "ejemplo": "Estamos cerrando la agenda de [mes]. Quedan 2 fechas disponibles. Si querés asegurar la tuya, necesito saberlo esta semana."
+      },
+      "variacion_costos": {
+        "cuando": "Siempre válido en Argentina — los valores del vivero se actualizan mensualmente.",
+        "ejemplo": "El presupuesto tiene validez hasta [fecha], pero los valores del vivero se actualizan mensualmente. Si confirmás antes de [fecha], te garantizo estos precios."
+      },
+      "disponibilidad_especies": {
+        "cuando": "El proyecto usa plantas de stock limitado o estacional.",
+        "ejemplo": "Las [especie] que usamos para tu proyecto las tenemos en stock ahora. Son las más pedidas y suelen agotarse. ¿Querés que te las reserve?"
+      },
+      "ventana_climatica": {
+        "cuando": "Se acerca cambio de estación relevante para la plantación en MDP.",
+        "ejemplo": "Para este tipo de proyecto lo ideal es ejecutar antes de que [bajen las temperaturas / llegue el calor]. Si lo dejamos para [mes] perdemos la ventana óptima."
+      }
+    }
+  },
 
   "ejemplos_buenos": [],
   "correcciones": []
