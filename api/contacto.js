@@ -37,23 +37,81 @@ function loadInstrucciones() {
     const filePath = path.join(process.cwd(), 'instrucciones.json');
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   } catch(e) {
+    // Fallback mínimo si el JSON no carga — evita que la app se caiga entera.
     return {
       identidad: { empresa: 'Paisajismo 212 / Vivero 212', ciudad: 'Mar del Plata, Argentina', historia: '18 años de historia.', clientes_referencia: ['Shell', 'Burgwagen', 'Shopping Aldrey', 'Green Mug Café', 'Tampico'] },
-      voz: { tono: 'Cálido, directo, humano.', maximo_palabras_wa: 150, maximo_palabras_mail: 200, parrafos_max_lineas: 4 },
-      reglas_absolutas: ['Escribir como persona real, no sistema de marketing', 'NUNCA usar: soluciones integrales, nos especializamos en, quedamos a disposición', 'NUNCA listar servicios en primer contacto'],
-      reglas_por_toque: {},
-      canal_por_rubro: {},
+      voz: { tono: 'Cálido, directo, humano.', maximo_palabras_wa: 80, maximo_palabras_mail: 150, parrafos_max_lineas: 3 },
+      reglas_absolutas: ['Escribir como persona real, no sistema de marketing', 'NUNCA listar servicios en primer contacto'],
+      secciones: {},
+      firmas: { Donato: 'Donato' },
+      lo_que_nunca_somos: [],
       ejemplos_buenos: [],
-      correcciones: [],
-      firmas: { Donato: 'Donato\nRelaciones y Desarrollo Comercial — Paisajismo 212\n@paisajismo212 | 223 512-8743' }
+      correcciones: []
     };
   }
 }
 
+// ---------- helpers de normalización ----------
+
+function normalizarCanal(canalTexto) {
+  const c = (canalTexto || '').toLowerCase();
+  if (c.includes('wpp') || c.includes('whatsapp')) return 'whatsapp';
+  if (c.includes('mail')) return 'mail';
+  if (c.includes('visita')) return 'visita_presencial';
+  if (c.includes('linkedin')) return 'linkedin';
+  return null;
+}
+
+function normalizarEstado(estadoTexto) {
+  return (estadoTexto || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita tildes (NEGOCIACIÓN -> NEGOCIACION)
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, '_')
+    .replace(/\./g, '');
+}
+
+function normalizarTipoAlianza(tipoTexto) {
+  const t = (tipoTexto || '').toLowerCase();
+  if (t.includes('recomend')) return 'recomendador';
+  if (t.includes('canal')) return 'canal';
+  if (t.includes('co-creador') || t.includes('co creador') || t.includes('cocreador')) return 'co_creador';
+  return null;
+}
+
+function buscarSegmentoPorRubro(inst, rubro) {
+  const segmentos = inst.segmentos || {};
+  const rubroLower = (rubro || '').toLowerCase();
+  for (const [key, seg] of Object.entries(segmentos)) {
+    const rubros = (seg.rubros || []).map(r => r.toLowerCase());
+    if (rubros.some(r => rubroLower.includes(r) || r.includes(rubroLower))) {
+      return { key, ...seg };
+    }
+  }
+  return null;
+}
+
+// Elige el paso de la secuencia de presupuesto según los días transcurridos.
+function elegirPasoPresupuesto(inst, dias) {
+  const pasos = (inst.secuencia_presupuesto || {}).pasos || [];
+  const d = Number(dias) || 0;
+  if (d < 2) return pasos.find(p => p.dia === 0);
+  if (d < 6) return pasos.find(p => p.dia === 3);
+  if (d < 11) return pasos.find(p => p.dia === 7);
+  if (d <= 30) return pasos.find(p => p.dia === 15);
+  return pasos.find(p => p.dia === '45-60');
+}
+
+// ---------- prompt building ----------
+
 function buildSystemPrompt(inst) {
   const id = inst.identidad || {};
+  const voz = inst.voz || {};
   const refs = (id.clientes_referencia || []).join(', ');
   const reglas = (inst.reglas_absolutas || []).map(r => `- ${r}`).join('\n');
+  const nuncaSomos = (inst.lo_que_nunca_somos || []).map(r => `- ${r}`).join('\n');
+  const prohibidoInformal = (voz.prohibido_informal || []).join(', ');
+  const preferido = (voz.preferido || []).join(', ');
   const correcciones = (inst.correcciones || []).length > 0
     ? '\nCORRECCIONES ESPECÍFICAS:\n' + inst.correcciones.map(c => `- ${c}`).join('\n') : '';
   const ejemplos = (inst.ejemplos_buenos || []).length > 0
@@ -70,49 +128,139 @@ function buildSystemPrompt(inst) {
 HISTORIA Y EQUIPO: ${id.historia || '18 años de historia.'}
 CLIENTES REFERENCIA: ${refs}
 
-VOZ Y TONO: ${(inst.voz || {}).tono || 'Cálido, directo, humano.'}
-Máximo ${(inst.voz || {}).maximo_palabras_wa || 150} palabras WA, ${(inst.voz || {}).maximo_palabras_mail || 200} mail. Párrafos de ${(inst.voz || {}).parrafos_max_lineas || 4} líneas max.
+VOZ Y TONO: ${voz.tono || 'Cálido, directo, humano.'}
+Registro: ${voz.registro || 'Tuteo profesional cálido.'}
+${voz.principio_rector ? 'PRINCIPIO RECTOR: ' + voz.principio_rector : ''}
+Máximo ${voz.maximo_palabras_wa || 80} palabras WA, ${voz.maximo_palabras_mail || 150} mail. Párrafos de ${voz.parrafos_max_lineas || 3} líneas max.
+${prohibidoInformal ? 'Nunca usar estas frases informales: ' + prohibidoInformal + '.' : ''}
+${preferido ? 'Preferir giros como: ' + preferido + '.' : ''}
 
 REGLAS ABSOLUTAS:
 ${reglas}${correcciones}
+
+LO QUE NUNCA SOMOS:
+${nuncaSomos}
 
 FIRMAS:
 ${firmas}
 ${ejemplos}
 
-OUTPUT: SOLO el mensaje listo. Si mail → primera línea "ASUNTO: [asunto]", línea en blanco, cuerpo. Sin explicaciones.`;
+OUTPUT: SOLO el mensaje listo. Si mail → primera línea "ASUNTO: [asunto]", línea en blanco, cuerpo. Sin explicaciones, sin comentarios sobre lo que hiciste.`;
 }
 
 function buildUserPrompt(tipo, datos, inst) {
-  const { lead, ctx, toque } = datos;
-  const reglaToque = ((inst.reglas_por_toque || {})[`toque_${toque || 1}`] || '');
-  const canalSugerido = ((inst.canal_por_rubro || {})[lead && lead.rubro] || 'según criterio');
+  const { lead, ctx, toque, firmante } = datos;
 
   if (tipo === 'mensaje_lead') {
-    return `LEAD DEL CRM:
+    const seccion = (datos.seccion || lead.seccion || 'base_leads').toLowerCase();
+    const estadoNorm = normalizarEstado(lead.estado);
+    const canalNorm = normalizarCanal(lead.canal);
+    const canalSugerido = ((inst.canal_por_rubro || {})[lead.rubro] || 'según criterio');
+
+    const bloques = [];
+
+    bloques.push(`LEAD DEL CRM (sección: ${seccion}):
 Empresa: ${lead.empresa}
 Contacto: ${lead.contacto}
 Estado: ${lead.estado}
-Rubro: ${lead.rubro}
+Rubro: ${lead.rubro || 'sin dato'}
 Canal: ${lead.canal || canalSugerido}
 Acción pendiente: ${lead.accion || 'primer contacto'}
 Días sin contacto: ${lead.dias || 0}
 Valor: ${lead.valor || 'sin dato'}
 Notas: ${lead.notas || 'sin notas'}
-${ctx ? 'Contexto adicional: ' + ctx : ''}
+${ctx ? 'Contexto adicional: ' + ctx : ''}`);
 
-TOQUE: ${toque || 1}
-${reglaToque ? 'REGLA PARA ESTE TOQUE: ' + reglaToque : ''}
+    // --- Reglas del canal específico (si aplica) ---
+    if (canalNorm && inst.reglas_por_canal && inst.reglas_por_canal[canalNorm]) {
+      bloques.push(`REGLAS DEL CANAL (${canalNorm}):\n${JSON.stringify(inst.reglas_por_canal[canalNorm], null, 2)}`);
+    }
 
-TAREA:
-- NUEVO / Mail 1 / WPP 1: presentación. Personalizá con algo de las notas. Si hay "warm" o "Red Donato": tono directo, mencioná la conexión en la primera línea.
-- Mail 2 / WPP 2: seguimiento con valor real por rubro. No "te recuerdo que te escribí".
-- Mail 3 / WPP 3: suave, honesto, sin presión, puerta abierta.
-- Visita Presencial: script de visita con contexto del lead.
-- PRESUP. ENVIADO días>20 o Recontactar: reactivación. Reconocé el tiempo. Si hay razón de pausa en notas, usala.
-- NEGOCIACIÓN: preguntá qué falta para avanzar (alcance, timing, precio).
-- EN ESPERA: reactivación suave calibrada al motivo de pausa.
-Firmante: Donato salvo arquitectura/desarrolladoras (Agustín) o institucional premium (Joaquín).`;
+    // --- Segmento por rubro (solo aplica a base_leads / embudo_activo) ---
+    if (seccion !== 'alianzas') {
+      const seg = buscarSegmentoPorRubro(inst, lead.rubro);
+      if (seg) {
+        bloques.push(`SEGMENTO (${seg.key}):
+Lógica: ${seg.logica}
+Dolor consciente: ${seg.dolor_consciente || ''}
+Dolor inconsciente: ${seg.dolor_inconsciente || ''}
+Nuestro rol: ${seg.nuestro_rol || ''}`);
+      }
+    }
+
+    // --- Lógica específica por sección ---
+    const seccionesInst = inst.secciones || {};
+
+    if (seccion === 'alianzas') {
+      const alianzas = seccionesInst.alianzas || {};
+      const tipoNorm = normalizarTipoAlianza(lead.tipoAlianza);
+      const tipoInfo = tipoNorm ? (alianzas.tipos || {})[tipoNorm] : null;
+      const estadoInfo = (alianzas.estados || {})[estadoNorm];
+
+      if (tipoInfo) {
+        bloques.push(`TIPO DE ALIANZA (${tipoNorm}):
+Definición: ${tipoInfo.definicion}
+Quiénes: ${tipoInfo.quienes}
+Ángulo central: ${tipoInfo.angulo_central}
+Rubro de contexto (NO determina el ángulo, solo aporta el dato específico a mencionar): ${lead.rubro || 'sin dato'}`);
+      }
+      if (estadoInfo) {
+        bloques.push(`ESTADO (${estadoNorm}) — lo que corresponde generar:\n${JSON.stringify(estadoInfo, null, 2)}`);
+      }
+
+    } else {
+      // base_leads o embudo_activo
+      const seccionInfo = seccionesInst[seccion] || {};
+      const estadoInfo = (seccionInfo.estados || {})[estadoNorm];
+
+      if (estadoInfo) {
+        // Si el estado remite a una regla de toque genérica (Base Leads NUEVO/CONTACTADO/SEGUIMIENTO)
+        if (estadoInfo.usa_regla_toque && inst.reglas_por_toque) {
+          bloques.push(`REGLA DE TOQUE (${estadoInfo.usa_regla_toque}):\n${inst.reglas_por_toque[estadoInfo.usa_regla_toque] || ''}`);
+        }
+        // Si el estado remite a un template fijo (ej. cierre_ciclo_template)
+        if (estadoInfo.usa_template && inst[estadoInfo.usa_template]) {
+          bloques.push(`TEMPLATE BASE A ADAPTAR (no copiar literal, adaptar al lead):\n${inst[estadoInfo.usa_template]}`);
+        }
+        // Si el estado remite a la secuencia de presupuesto (Embudo Activo → PRESUP_ENVIADO)
+        if (estadoInfo.usa_secuencia === 'secuencia_presupuesto') {
+          const paso = elegirPasoPresupuesto(inst, lead.dias);
+          if (paso) {
+            bloques.push(`PASO DE LA SECUENCIA DE PRESUPUESTO (día ${paso.dia} — ${paso.nombre}):
+Canal: ${paso.canal}
+Mensaje base a adaptar: ${paso.mensaje}
+${paso.regla ? 'Regla: ' + paso.regla : ''}`);
+            if (paso.dia === 15) {
+              bloques.push(`MOTIVOS DE URGENCIA DISPONIBLES (elegir UNO SOLO, el más honesto para este caso):\n${JSON.stringify(inst.motivos_urgencia, null, 2)}`);
+            }
+          }
+          bloques.push(`Regla general de la secuencia: ${(inst.secuencia_presupuesto || {}).regla_dura_general || ''}`);
+        }
+        // CTA de ejemplo y reglas duras propias del estado (si existen, más allá de lo anterior)
+        if (estadoInfo.cta_ejemplos) {
+          bloques.push(`CTA DE REFERENCIA para este estado (inspirate, no copies literal):\n- ${estadoInfo.cta_ejemplos.join('\n- ')}`);
+        }
+        if (estadoInfo.angulo) {
+          bloques.push(`Ángulo para este estado: ${estadoInfo.angulo}`);
+        }
+        if (estadoInfo.regla_dura) {
+          bloques.push(`Regla dura de este estado: ${estadoInfo.regla_dura}`);
+        }
+        if (estadoInfo.canal_default) {
+          bloques.push(`Canal por defecto para este estado: ${estadoInfo.canal_default}`);
+        }
+      }
+
+      // Warm: si hay conexión/referencia marcada en notas o contexto
+      const textoWarm = `${lead.notas || ''} ${ctx || ''}`.toLowerCase();
+      if (textoWarm.includes('warm') || textoWarm.includes('red donato') || textoWarm.includes('referencia')) {
+        bloques.push(`ESTRUCTURA WARM (hay vínculo previo/referencia):\n${JSON.stringify(inst.estructura_warm, null, 2)}`);
+      }
+    }
+
+    bloques.push(`FIRMANTE ELEGIDO POR EL USUARIO: ${firmante || 'Donato'}. Usar SOLO este nombre en la firma — nunca elegir otro por tu cuenta, aunque el rubro sugiera otro firmante.`);
+
+    return bloques.join('\n\n');
   }
 
   if (tipo === 'mensaje_libre') {
@@ -124,7 +272,9 @@ Canal: ${datos.canal || 'según criterio'}
 Toque: ${toque || 1}
 ${ctx ? 'Qué quiero decir / contexto: ' + ctx : ''}
 
-TAREA: Redactá el mensaje. Aplicá todas las reglas. Firmante: Donato salvo que se indique otro.`;
+FIRMANTE ELEGIDO POR EL USUARIO: ${firmante || 'Donato'}. Usar SOLO este nombre en la firma.
+
+TAREA: Redactá el mensaje aplicando todas las reglas del sistema.`;
   }
 
   return `Redactá un mensaje comercial con estos datos: ${JSON.stringify(datos)}`;
