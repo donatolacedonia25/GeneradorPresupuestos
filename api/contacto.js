@@ -149,7 +149,7 @@ OUTPUT: SOLO el mensaje listo. Si mail → primera línea "ASUNTO: [asunto]", l�
 }
 
 function buildUserPrompt(tipo, datos, inst) {
-  const { lead, ctx, toque, firmante } = datos;
+  const { lead, ctx, firmante, accion } = datos;
 
   if (tipo === 'mensaje_lead') {
     const seccion = (datos.seccion || lead.seccion || 'base_leads').toLowerCase();
@@ -269,7 +269,7 @@ Empresa: ${datos.empresa || ''}
 Contacto: ${datos.contacto || ''}
 Rubro: ${datos.rubro || ''}
 Canal: ${datos.canal || 'según criterio'}
-Toque: ${toque || 1}
+Acción / objetivo del mensaje: ${accion || 'presentación inicial'}
 ${ctx ? 'Qué quiero decir / contexto: ' + ctx : ''}
 
 FIRMANTE ELEGIDO POR EL USUARIO: ${firmante || 'Donato'}. Usar SOLO este nombre en la firma.
