@@ -110,15 +110,19 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
     <div class="tabs-mini">
       <button class="tab-mini active" onclick="switchLeadTab('leads',this)">Base Leads</button>
       <button class="tab-mini" onclick="switchLeadTab('embudo',this)">Embudo Activo</button>
+      <button class="tab-mini" onclick="switchLeadTab('alianzas',this)">Alianzas</button>
       <button class="tab-mini" onclick="switchLeadTab('libre',this)">Mensaje libre</button>
     </div>
-    <div class="search-wrap sec-leads sec-embudo">
+    <div class="search-wrap sec-leads sec-embudo sec-alianzas">
       <input type="text" id="search-input" placeholder="Buscar empresa o contacto..." oninput="filterLeads()">
     </div>
     <div id="leads-list" class="leads-list sec-leads">
       <div class="empty-state">Cargando leads...</div>
     </div>
     <div id="embudo-list" class="leads-list sec-embudo" style="display:none">
+      <div class="empty-state">Cargando...</div>
+    </div>
+    <div id="alianzas-list" class="leads-list sec-alianzas" style="display:none">
       <div class="empty-state">Cargando...</div>
     </div>
     <div class="sec-libre" id="libre-panel" style="display:none;padding:14px">
@@ -163,6 +167,15 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
 
     <div class="card">
       <h3>Generar mensaje</h3>
+      <div class="field">
+        <label>Firmante</label>
+        <select id="firmante-select">
+          <option value="Donato" selected>Donato</option>
+          <option value="Agustin">Agustín</option>
+          <option value="Joaquin">Joaquín</option>
+        </select>
+        <span class="hint">Quién firma el mensaje. Se elige siempre acá, nunca lo decide Claude solo.</span>
+      </div>
       <div class="field">
         <label>Contexto adicional <span style="color:#999;font-weight:400;text-transform:none">(opcional — cualquier detalle real que tengas)</span></label>
         <textarea id="ctx-input" placeholder="Ej: vi su IG y tienen terraza sin verde / me dijeron que tienen reunión la semana que viene / están renovando el local..."></textarea>
@@ -230,16 +243,17 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
 const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwHJRfMCG9cFswTOMo3TRYQ8FM-_u0x8hBVdCpmembrFW6v4PJRh-1QqhcGQxwtrFNE/exec';
 
 // ── Datos del CRM — se cargan desde el Sheets al abrir la página (ver cargarLeads) ──
-let LEADS_DATA = { leads: [], embudo: [] };
+let LEADS_DATA = { leads: [], embudo: [], alianzas: [] };
 
 let curTab = 'leads';
 let curLead = null;
 let curTipo = null;
 let filteredLeads = [];
 let filteredEmbudo = [];
+let filteredAlianzas = [];
 
 function epClass(e){
-  return {NUEVO:'e-nuevo',CONTACTADO:'e-contact',CONVERSANDO:'e-conv','PRESUP. ENVIADO':'e-presup','EN ESPERA':'e-espera','NEGOCIACIÓN':'e-neg','VISITA':'e-conv'}[e]||'e-nuevo';
+  return {NUEVO:'e-nuevo',CONTACTADO:'e-contact',CONVERSANDO:'e-conv','PRESUP. ENVIADO':'e-presup','EN ESPERA':'e-espera','NEGOCIACIÓN':'e-neg','VISITA':'e-conv','1ER CONTACTO':'e-contact',ACTIVA:'e-conv',PAUSADO:'e-espera'}[e]||'e-nuevo';
 }
 
 // ── Carga los leads desde el Google Sheets a través del webhook ──
@@ -252,15 +266,20 @@ async function cargarLeads() {
 
     LEADS_DATA.leads = data.leads || [];
     LEADS_DATA.embudo = data.embudo || [];
+    LEADS_DATA.alianzas = data.alianzas || [];
     filteredLeads = [...LEADS_DATA.leads];
     filteredEmbudo = [...LEADS_DATA.embudo];
+    filteredAlianzas = [...LEADS_DATA.alianzas];
 
     renderLeadList(filteredLeads, 'leads-list', 'leads');
     renderLeadList(filteredEmbudo, 'embudo-list', 'embudo');
+    renderLeadList(filteredAlianzas, 'alianzas-list', 'alianzas');
   } catch (e) {
     document.getElementById('leads-list').innerHTML =
       '<div class="empty-state">No se pudo cargar el CRM.<br>' + e.message + '</div>';
     document.getElementById('embudo-list').innerHTML =
+      '<div class="empty-state">No se pudo cargar el CRM.</div>';
+    document.getElementById('alianzas-list').innerHTML =
       '<div class="empty-state">No se pudo cargar el CRM.</div>';
     document.getElementById('lead-count').textContent = 'error al cargar';
   }
@@ -274,14 +293,14 @@ function renderLeadList(arr, containerId, tipo) {
       <div class="lc-top">
         <div>
           <div class="lc-name">${l.empresa}</div>
-          <div class="lc-sub">${l.contacto}${l.valor ? ' · ' + l.valor : ''}</div>
+          <div class="lc-sub">${l.contacto}${l.valor ? ' · ' + l.valor : ''}${l.tipoAlianza ? ' · ' + l.tipoAlianza : ''}</div>
         </div>
         <span class="epill ${epClass(l.estado)}">${l.estado}</span>
       </div>
       ${l.notas ? `<div class="lc-note">${l.notas.substring(0,80)}${l.notas.length>80?'…':''}</div>` : ''}
       ${l.accion ? `<span class="achip">→ ${l.accion}</span>` : ''}
     </div>`).join('');
-  document.getElementById('lead-count').textContent = `${LEADS_DATA.leads.length} leads · ${LEADS_DATA.embudo.length} en embudo`;
+  document.getElementById('lead-count').textContent = `${LEADS_DATA.leads.length} leads · ${LEADS_DATA.embudo.length} en embudo · ${LEADS_DATA.alianzas.length} alianzas`;
 }
 
 function filterLeads() {
@@ -289,9 +308,12 @@ function filterLeads() {
   if (curTab === 'leads') {
     filteredLeads = q ? LEADS_DATA.leads.filter(l => (l.empresa+l.contacto+l.rubro).toLowerCase().includes(q)) : [...LEADS_DATA.leads];
     renderLeadList(filteredLeads, 'leads-list', 'leads');
-  } else {
+  } else if (curTab === 'embudo') {
     filteredEmbudo = q ? LEADS_DATA.embudo.filter(l => (l.empresa+l.contacto+l.rubro).toLowerCase().includes(q)) : [...LEADS_DATA.embudo];
     renderLeadList(filteredEmbudo, 'embudo-list', 'embudo');
+  } else if (curTab === 'alianzas') {
+    filteredAlianzas = q ? LEADS_DATA.alianzas.filter(l => (l.empresa+l.contacto+l.rubro+(l.tipoAlianza||'')).toLowerCase().includes(q)) : [...LEADS_DATA.alianzas];
+    renderLeadList(filteredAlianzas, 'alianzas-list', 'alianzas');
   }
 }
 
@@ -301,24 +323,43 @@ function switchLeadTab(tab, btn) {
   btn.classList.add('active');
   document.getElementById('leads-list').style.display = tab === 'leads' ? 'block' : 'none';
   document.getElementById('embudo-list').style.display = tab === 'embudo' ? 'block' : 'none';
+  document.getElementById('alianzas-list').style.display = tab === 'alianzas' ? 'block' : 'none';
   document.getElementById('libre-panel').style.display = tab === 'libre' ? 'block' : 'none';
-  document.getElementById('toque-field-crm').style.display = tab === 'libre' ? 'none' : 'block';
+  document.getElementById('toque-field-crm').style.display = (tab === 'libre' || tab === 'alianzas') ? 'none' : 'block';
   document.getElementById('search-input').parentElement.style.display = tab === 'libre' ? 'none' : 'block';
   if (tab === 'libre') {
     curLead = null; curTipo = 'libre';
     setStatus('Completá los datos del contacto y generá el mensaje.', 'load');
     document.getElementById('gen-btn').disabled = false;
     document.getElementById('lead-detail').style.display = 'none';
+  } else {
+    curLead = null; curTipo = null;
+    document.getElementById('gen-btn').disabled = true;
+    document.getElementById('lead-detail').style.display = 'none';
+    setStatus('Seleccioná un lead del panel izquierdo para generar el mensaje.', 'load');
   }
+}
+
+function containerIdDe(tipo) {
+  if (tipo === 'leads') return 'leads-list';
+  if (tipo === 'embudo') return 'embudo-list';
+  if (tipo === 'alianzas') return 'alianzas-list';
+  return 'leads-list';
+}
+
+function arrayDe(tipo) {
+  if (tipo === 'leads') return filteredLeads;
+  if (tipo === 'embudo') return filteredEmbudo;
+  if (tipo === 'alianzas') return filteredAlianzas;
+  return [];
 }
 
 function selectLead(idx, tipo) {
   document.querySelectorAll('.lead-card').forEach(c => c.classList.remove('sel'));
-  const cards = document.querySelectorAll(`#${tipo === 'leads' ? 'leads-list' : 'embudo-list'} .lead-card`);
+  const cards = document.querySelectorAll(`#${containerIdDe(tipo)} .lead-card`);
   if (cards[idx]) cards[idx].classList.add('sel');
 
-  const arr = tipo === 'leads' ? filteredLeads : filteredEmbudo;
-  curLead = arr[idx];
+  curLead = arrayDe(tipo)[idx];
   curTipo = tipo;
 
   const detail = document.getElementById('lead-detail');
@@ -327,6 +368,7 @@ function selectLead(idx, tipo) {
   document.getElementById('detail-body').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
       <span class="epill ${epClass(curLead.estado)}">${curLead.estado}</span>
+      ${curLead.tipoAlianza ? `<span style="font-size:11px;background:#fff3cd;padding:2px 7px;border-radius:99px;color:#856404">${curLead.tipoAlianza}</span>` : ''}
       <span style="font-size:11px;background:#f0f0f0;padding:2px 7px;border-radius:99px;color:#555">${curLead.rubro}</span>
       ${curLead.canal ? `<span style="font-size:11px;background:#e8f4ee;padding:2px 7px;border-radius:99px;color:#1B4332">${curLead.canal}</span>` : ''}
     </div>
@@ -336,8 +378,8 @@ function selectLead(idx, tipo) {
     <div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Acción pendiente:</strong> ${curLead.accion || '—'}</div>
     ${curLead.notas ? `<div style="font-size:12px;color:#666;margin-top:4px;line-height:1.5">${curLead.notas}</div>` : ''}`;
 
-  // Pre-completar campos de registro
-  setNextActionDefaults(curLead);
+  // Pre-completar campos de registro (solo tiene sentido para leads/embudo por ahora)
+  if (tipo !== 'alianzas') setNextActionDefaults(curLead);
   document.getElementById('gen-btn').disabled = false;
   setStatus('Lead seleccionado. Agregá contexto si querés y generá el mensaje.', 'load');
   document.getElementById('output-card').style.display = 'none';
@@ -371,9 +413,18 @@ function setStatus(msg, type) {
   el.textContent = msg;
 }
 
+// Traduce la pestaña activa del front (leads/embudo/alianzas) a la clave que espera instrucciones.json
+function seccionActual() {
+  if (curTipo === 'leads') return 'base_leads';
+  if (curTipo === 'embudo') return 'embudo_activo';
+  if (curTipo === 'alianzas') return 'alianzas';
+  return null;
+}
+
 async function generarMensaje() {
   const btn = document.getElementById('gen-btn');
   const ctx = document.getElementById('ctx-input').value.trim();
+  const firmante = document.getElementById('firmante-select').value;
 
   let body;
   if (curTipo === 'libre') {
@@ -387,6 +438,7 @@ async function generarMensaje() {
         rubro: document.getElementById('l-rubro').value,
         canal: document.getElementById('l-canal').value,
         toque: document.getElementById('l-toque').value,
+        firmante,
         ctx
       }
     };
@@ -397,6 +449,8 @@ async function generarMensaje() {
       tipo: 'mensaje_lead',
       datos: {
         lead: curLead,
+        seccion: seccionActual(),
+        firmante,
         ctx,
         toque: toqueOverride || null
       }
