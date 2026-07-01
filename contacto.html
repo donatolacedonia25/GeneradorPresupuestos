@@ -210,23 +210,15 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
           <div style="font-size:10px;font-weight:700;color:#2D6A4F;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">Registrar en Google Sheets</div>
           <div class="reg-grid">
             <div class="field"><label>Nuevo estado</label>
-              <select id="reg-estado">
-                <option value="CONTACTADO">CONTACTADO</option>
-                <option value="CONVERSANDO">CONVERSANDO</option>
-                <option value="PRESUP. ENVIADO">PRESUP. ENVIADO</option>
-                <option value="EN ESPERA">EN ESPERA</option>
-                <option value="NEGOCIACIÓN">NEGOCIACIÓN</option>
-                <option value="VISITA">VISITA</option>
-              </select>
+              <select id="reg-estado"></select>
             </div>
-            <div class="field"><label>Próxima acción</label><input id="reg-accion" placeholder="Mail 2 en 21 días"></div>
+            <div class="field"><label>Próxima acción</label>
+              <select id="reg-accion"></select>
+            </div>
           </div>
           <div class="reg-grid">
             <div class="field"><label>Fecha próximo contacto</label><input id="reg-fecha" placeholder="dd/mm/aaaa"></div>
             <div class="field"><label>Nota del envío</label><input id="reg-nota" placeholder="Respondió con interés / sin respuesta..."></div>
-          </div>
-          <div class="field"><label>URL del webhook (Apps Script) <span style="color:#999;font-weight:400;text-transform:none">— se guarda automáticamente</span></label>
-            <input id="wh-url" placeholder="https://script.google.com/macros/s/...exec" oninput="saveWh()">
           </div>
           <button class="reg-btn" id="reg-submit-btn" onclick="registrarEnvio()" style="margin-top:4px;width:100%;justify-content:center">
             ✓ Confirmar registro en Sheets
@@ -254,6 +246,26 @@ let filteredAlianzas = [];
 
 function epClass(e){
   return {NUEVO:'e-nuevo',CONTACTADO:'e-contact',CONVERSANDO:'e-conv','PRESUP. ENVIADO':'e-presup','EN ESPERA':'e-espera','NEGOCIACIÓN':'e-neg','VISITA':'e-conv','1ER CONTACTO':'e-contact',ACTIVA:'e-conv',PAUSADO:'e-espera'}[e]||'e-nuevo';
+}
+
+// ── Valores reales de los desplegables del Sheet, por sección ──
+const ESTADOS_POR_SECCION = {
+  leads: ['NUEVO','CONTACTADO','SEGUIMIENTO','CONVERSANDO','EN EMBUDO','PAUSADO'],
+  embudo: ['CONVERSANDO','VISITA','PREP. PROPUESTA','PRESUP. ENVIADO','NEGOCIACIÓN','EN ESPERA','EN CLIENTES','RECHAZADO'],
+  alianzas: ['NUEVO','1ER CONTACTO','CONVERSANDO','ACTIVA','PAUSADO']
+};
+
+const ACCIONES_POR_SECCION = {
+  leads: ['Visita Presencial','Env. Mail 1','Env. Mail 2','Env. Mail 3','Env WPP 1','Env WPP 2','Env WPP 3','Env. Presentación','Coordinar Visita','Esperar (poner fecha)','Cerrar ciclo'],
+  embudo: ['Llamar','Env. Wpp','Env. Mail','Visita Presencial','Definir Presupuesto','Env. Presupuesto','Reconectar','Esperar respuesta'],
+  alianzas: ['Coordinar Reunión','Env. Presentación','Seguimiento c/ valor','Proponer Co-proyecto','Recontactar','Mantener tibio']
+};
+
+function poblarSelectsRegistro(tipo) {
+  const estados = ESTADOS_POR_SECCION[tipo] || [];
+  const acciones = ACCIONES_POR_SECCION[tipo] || [];
+  document.getElementById('reg-estado').innerHTML = estados.map(e => `<option value="${e}">${e}</option>`).join('');
+  document.getElementById('reg-accion').innerHTML = acciones.map(a => `<option value="${a}">${a}</option>`).join('');
 }
 
 // ── Carga los leads desde el Google Sheets a través del webhook ──
@@ -378,33 +390,45 @@ function selectLead(idx, tipo) {
     <div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Acción pendiente:</strong> ${curLead.accion || '—'}</div>
     ${curLead.notas ? `<div style="font-size:12px;color:#666;margin-top:4px;line-height:1.5">${curLead.notas}</div>` : ''}`;
 
-  // Pre-completar campos de registro (solo tiene sentido para leads/embudo por ahora)
-  if (tipo !== 'alianzas') setNextActionDefaults(curLead);
+  // Pre-completar campos de registro
+  setNextActionDefaults(curLead, tipo);
   document.getElementById('gen-btn').disabled = false;
   setStatus('Lead seleccionado. Agregá contexto si querés y generá el mensaje.', 'load');
   document.getElementById('output-card').style.display = 'none';
   document.getElementById('reg-section').style.display = 'none';
 }
 
-function setNextActionDefaults(lead) {
+function setNextActionDefaults(lead, tipo) {
+  poblarSelectsRegistro(tipo);
   const a = (lead.accion || '').toLowerCase();
-  let nextAction = 'Seguimiento';
-  if (a.includes('mail 1') || a.includes('wpp 1')) nextAction = 'Mail 2 en 21 días';
-  else if (a.includes('mail 2') || a.includes('wpp 2')) nextAction = 'Mail 3 en 21 días';
-  else if (a.includes('mail 3') || a.includes('wpp 3')) nextAction = 'Pausa 60d';
-  else if (a.includes('presup')) nextAction = 'Seguimiento presupuesto +7d';
-  else if (a.includes('visita')) nextAction = 'Enviar presupuesto';
+  let nextAction = '';
+  let nextEstado = lead.estado;
 
-  document.getElementById('reg-accion').value = nextAction;
+  if (tipo === 'leads') {
+    if (a.includes('mail 1') || a.includes('wpp 1')) { nextAction = a.includes('wpp') ? 'Env WPP 2' : 'Env. Mail 2'; nextEstado = 'CONTACTADO'; }
+    else if (a.includes('mail 2') || a.includes('wpp 2')) { nextAction = a.includes('wpp') ? 'Env WPP 3' : 'Env. Mail 3'; nextEstado = 'CONTACTADO'; }
+    else if (a.includes('mail 3') || a.includes('wpp 3')) { nextAction = 'Cerrar ciclo'; nextEstado = 'PAUSADO'; }
+    else if (a.includes('presentaci')) { nextAction = 'Coordinar Visita'; nextEstado = 'CONVERSANDO'; }
+    else { nextAction = 'Env. Mail 1'; nextEstado = 'CONTACTADO'; }
+  } else if (tipo === 'embudo') {
+    if (a.includes('definir presup')) { nextAction = 'Env. Presupuesto'; nextEstado = 'PRESUP. ENVIADO'; }
+    else if (a.includes('esperar respuesta')) { nextAction = 'Reconectar'; }
+    else if (a.includes('visita')) { nextAction = 'Definir Presupuesto'; nextEstado = 'PREP. PROPUESTA'; }
+    else { nextAction = 'Llamar'; }
+  } else if (tipo === 'alianzas') {
+    if (a.includes('presentaci')) { nextAction = 'Coordinar Reunión'; nextEstado = '1ER CONTACTO'; }
+    else if (a.includes('reuni')) { nextAction = 'Seguimiento c/ valor'; nextEstado = 'CONVERSANDO'; }
+    else { nextAction = 'Mantener tibio'; }
+  }
+
+  const selAccion = document.getElementById('reg-accion');
+  if ([...selAccion.options].some(o => o.value === nextAction)) selAccion.value = nextAction;
 
   const d = new Date(); d.setDate(d.getDate() + 21);
   document.getElementById('reg-fecha').value = d.toLocaleDateString('es-AR');
 
-  const next = lead.estado === 'NUEVO' ? 'CONTACTADO' :
-    lead.estado === 'CONTACTADO' ? 'CONVERSANDO' :
-    lead.estado === 'VISITA' ? 'PRESUP. ENVIADO' : lead.estado;
-  const sel = document.getElementById('reg-estado');
-  if (sel) for (let o of sel.options) o.selected = o.value === next;
+  const selEstado = document.getElementById('reg-estado');
+  if ([...selEstado.options].some(o => o.value === nextEstado)) selEstado.value = nextEstado;
 }
 
 function setStatus(msg, type) {
@@ -516,8 +540,6 @@ function toggleReg() {
 }
 
 async function registrarEnvio() {
-  const whUrl = document.getElementById('wh-url').value.trim() || WEBHOOK_URL;
-  if (!whUrl) { alert('Pegá la URL del webhook del Apps Script.'); return; }
   if (!curLead) { alert('No hay lead seleccionado.'); return; }
 
   const btn = document.getElementById('reg-submit-btn');
@@ -535,7 +557,7 @@ async function registrarEnvio() {
   };
 
   try {
-    const res = await fetch(whUrl, {
+    const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -548,24 +570,12 @@ async function registrarEnvio() {
   } catch(e) {
     btn.disabled = false;
     btn.textContent = '✓ Confirmar registro';
-    alert('Error al registrar: ' + e.message + '\n\nVerificá que la URL del webhook sea correcta.');
+    alert('Error al registrar: ' + e.message);
   }
-}
-
-function saveWh() {
-  try { localStorage.setItem('p212_wh_v3', document.getElementById('wh-url').value); } catch(e) {}
-}
-
-function loadWh() {
-  try {
-    const s = localStorage.getItem('p212_wh_v3');
-    if (s) document.getElementById('wh-url').value = s;
-  } catch(e) {}
 }
 
 // Init
 cargarLeads();
-loadWh();
 </script>
 </body>
 </html>
