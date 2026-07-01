@@ -337,7 +337,7 @@ function switchLeadTab(tab, btn) {
   document.getElementById('embudo-list').style.display = tab === 'embudo' ? 'block' : 'none';
   document.getElementById('alianzas-list').style.display = tab === 'alianzas' ? 'block' : 'none';
   document.getElementById('libre-panel').style.display = tab === 'libre' ? 'block' : 'none';
-  document.getElementById('toque-field-crm').style.display = (tab === 'libre' || tab === 'alianzas') ? 'none' : 'block';
+  document.getElementById('toque-field-crm').style.display = (tab === 'leads') ? 'block' : 'none';
   document.getElementById('search-input').parentElement.style.display = tab === 'libre' ? 'none' : 'block';
   if (tab === 'libre') {
     curLead = null; curTipo = 'libre';
