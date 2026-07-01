@@ -147,11 +147,24 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
           <option value="LinkedIn">LinkedIn</option>
         </select>
       </div>
-      <div class="field"><label>Toque</label>
-        <select id="l-toque">
-          <option value="1">Toque 1 — presentación</option>
-          <option value="2">Toque 2 — seguimiento</option>
-          <option value="3">Toque 3 — cierre</option>
+      <div class="field"><label>Acción / objetivo del mensaje</label>
+        <select id="l-accion">
+          <optgroup label="Base Leads">
+            <option>Visita Presencial</option><option>Env. Mail 1</option><option>Env. Mail 2</option>
+            <option>Env. Mail 3</option><option>Env WPP 1</option><option>Env WPP 2</option>
+            <option>Env WPP 3</option><option>Env. Presentación</option><option>Coordinar Visita</option>
+            <option>Esperar (poner fecha)</option><option>Cerrar ciclo</option>
+          </optgroup>
+          <optgroup label="Embudo Activo">
+            <option>Llamar</option><option>Env. Wpp</option><option>Env. Mail</option>
+            <option>Visita Presencial</option><option>Definir Presupuesto</option>
+            <option>Env. Presupuesto</option><option>Reconectar</option><option>Esperar respuesta</option>
+          </optgroup>
+          <optgroup label="Alianzas">
+            <option>Coordinar Reunión</option><option>Env. Presentación</option>
+            <option>Seguimiento c/ valor</option><option>Proponer Co-proyecto</option>
+            <option>Recontactar</option><option>Mantener tibio</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -181,14 +194,10 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
         <textarea id="ctx-input" placeholder="Ej: vi su IG y tienen terraza sin verde / me dijeron que tienen reunión la semana que viene / están renovando el local..."></textarea>
         <span class="hint">Claude lee el estado del CRM y el contexto para redactar. Más contexto = mensaje más personalizado.</span>
       </div>
-      <div id="toque-field-crm" class="field" style="display:none">
-        <label>Toque (override opcional)</label>
-        <select id="toque-crm">
-          <option value="">automático según acción del CRM</option>
-          <option value="1">Toque 1 — presentación</option>
-          <option value="2">Toque 2 — seguimiento</option>
-          <option value="3">Toque 3 — cierre</option>
-        </select>
+      <div id="accion-field-crm" class="field">
+        <label>Acción</label>
+        <select id="accion-crm"></select>
+        <span class="hint">Qué estás por hacer con este contacto. Se prellena con la acción pendiente del CRM — cambiala si vas a hacer otra cosa.</span>
       </div>
       <div class="status-bar load on" id="gen-status">Seleccioná un lead del panel izquierdo para generar el mensaje.</div>
       <button class="gen-btn" id="gen-btn" onclick="generarMensaje()" disabled>
@@ -268,6 +277,16 @@ function poblarSelectsRegistro(tipo) {
   document.getElementById('reg-accion').innerHTML = acciones.map(a => `<option value="${a}">${a}</option>`).join('');
 }
 
+// Select de "qué estoy por hacer ahora" (previo a generar el mensaje) — distinto del reg-accion (qué queda pendiente después)
+function poblarAccionCrm(tipo, accionActual) {
+  const acciones = ACCIONES_POR_SECCION[tipo] || [];
+  const sel = document.getElementById('accion-crm');
+  sel.innerHTML = acciones.map(a => `<option value="${a}">${a}</option>`).join('');
+  if (accionActual && acciones.some(a => a.toLowerCase() === accionActual.toLowerCase())) {
+    sel.value = acciones.find(a => a.toLowerCase() === accionActual.toLowerCase());
+  }
+}
+
 // ── Carga los leads desde el Google Sheets a través del webhook ──
 async function cargarLeads() {
   document.getElementById('lead-count').textContent = 'cargando...';
@@ -337,7 +356,7 @@ function switchLeadTab(tab, btn) {
   document.getElementById('embudo-list').style.display = tab === 'embudo' ? 'block' : 'none';
   document.getElementById('alianzas-list').style.display = tab === 'alianzas' ? 'block' : 'none';
   document.getElementById('libre-panel').style.display = tab === 'libre' ? 'block' : 'none';
-  document.getElementById('toque-field-crm').style.display = (tab === 'leads') ? 'block' : 'none';
+  document.getElementById('accion-field-crm').style.display = (tab === 'libre') ? 'none' : 'block';
   document.getElementById('search-input').parentElement.style.display = tab === 'libre' ? 'none' : 'block';
   if (tab === 'libre') {
     curLead = null; curTipo = 'libre';
@@ -390,7 +409,10 @@ function selectLead(idx, tipo) {
     <div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Acción pendiente:</strong> ${curLead.accion || '—'}</div>
     ${curLead.notas ? `<div style="font-size:12px;color:#666;margin-top:4px;line-height:1.5">${curLead.notas}</div>` : ''}`;
 
-  // Pre-completar campos de registro
+  // Pre-completar el selector de "qué estoy por hacer" con la acción pendiente real del CRM
+  poblarAccionCrm(tipo, curLead.accion);
+
+  // Pre-completar campos de registro (sugerencia del PRÓXIMO paso, para después de generar)
   setNextActionDefaults(curLead, tipo);
   document.getElementById('gen-btn').disabled = false;
   setStatus('Lead seleccionado. Agregá contexto si querés y generá el mensaje.', 'load');
@@ -461,22 +483,23 @@ async function generarMensaje() {
         contacto: document.getElementById('l-contacto').value.trim(),
         rubro: document.getElementById('l-rubro').value,
         canal: document.getElementById('l-canal').value,
-        toque: document.getElementById('l-toque').value,
+        accion: document.getElementById('l-accion').value,
         firmante,
         ctx
       }
     };
   } else {
     if (!curLead) { setStatus('Seleccioná un lead primero.', 'err'); return; }
-    const toqueOverride = document.getElementById('toque-crm').value;
+    const accionElegida = document.getElementById('accion-crm').value;
+    // Mandamos el lead con la acción que el usuario confirmó/eligió (puede diferir de la que figura en el CRM)
+    const leadConAccion = Object.assign({}, curLead, { accion: accionElegida || curLead.accion });
     body = {
       tipo: 'mensaje_lead',
       datos: {
-        lead: curLead,
+        lead: leadConAccion,
         seccion: seccionActual(),
         firmante,
-        ctx,
-        toque: toqueOverride || null
+        ctx
       }
     };
   }
