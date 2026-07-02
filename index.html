@@ -369,6 +369,7 @@ function selectLeadPresu(i){
   if(!l) return;
   document.getElementById('p-nom').value = l.empresa || '';
   document.getElementById('p-cont').value = l.contacto || '';
+  document.getElementById('p-ubic').value = l.direccion || '';
   document.getElementById('lead-picker-selected').style.display = 'block';
   document.getElementById('lead-picker-name').textContent = l.empresa;
 }
