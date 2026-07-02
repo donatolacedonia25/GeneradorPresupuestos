@@ -164,18 +164,55 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
   </div>
 </div>
 
+<div class="modal-overlay" id="crear-lead-modal">
+  <div class="modal" style="max-width:480px">
+    <h3>+ Crear lead nuevo</h3>
+    <p>Se guarda en el Sheet y queda seleccionado para este presupuesto.</p>
+    <div class="form-grid">
+      <div class="full"><label>Empresa *</label><input id="cl-empresa" placeholder="Hotel Sainte Jeanne"></div>
+      <div><label>Contacto</label><input id="cl-contacto" placeholder="Sebastián (gerencia)"></div>
+      <div><label>Rubro</label><input id="cl-rubro" placeholder="Hotelería"></div>
+      <div><label>Canal</label>
+        <select id="cl-canal">
+          <option value="">— elegí el canal —</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Mail">Mail</option>
+          <option value="Visita presencial">Visita presencial</option>
+          <option value="LinkedIn">LinkedIn</option>
+        </select>
+      </div>
+      <div><label>Dirección</label><input id="cl-direccion" placeholder="Av. Peralta Ramos 1234"></div>
+      <div><label>Destino *</label>
+        <select id="cl-destino" onchange="toggleCuitCrearLead()">
+          <option value="leads">Base Leads</option>
+          <option value="embudo">Embudo Activo</option>
+          <option value="alianzas">Alianzas</option>
+        </select>
+      </div>
+      <div class="full" id="cl-cuit-wrap" style="display:none"><label>CUIT / CUIL</label><input id="cl-cuit" placeholder="20-12345678-9"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-sec" onclick="closeCrearLeadModal()">Cancelar</button>
+      <button class="btn-pri" onclick="submitCrearLead()" id="cl-submit-btn">Crear y seleccionar</button>
+    </div>
+    <div class="import-status" id="cl-status" style="margin-top:8px;display:block"></div>
+  </div>
+</div>
+
 <div id="tab-presupuesto" class="tab-content active">
 <div class="container">
   <div class="info">Completá los campos → la IA redacta descripción, objetivos y propuesta → PDF listo para enviar.</div>
+  <div class="info" style="border-left-color:#c0392b;background:#fdecea;color:#842029">El presupuesto debe estar atado a un lead del CRM. Seleccionalo abajo antes de generar.</div>
 
   <div class="card">
-    <h2>Lead del CRM (opcional)</h2>
+    <h2>Lead del CRM (obligatorio)</h2>
     <input type="text" id="lead-search" placeholder="Buscar empresa o contacto..." oninput="filterLeadsPresu()">
     <div id="lead-picker-list" style="max-height:220px;overflow-y:auto;border:1px solid #e5ede5;border-radius:6px;margin-top:10px"></div>
     <div id="lead-picker-selected" style="display:none;margin-top:10px;padding:8px 12px;background:#e8f4ee;border-radius:5px;font-size:12px;color:#1B4332">
       Lead seleccionado: <strong id="lead-picker-name"></strong>
       <button onclick="clearLeadPicker()" style="float:right;background:none;border:none;color:#1B4332;cursor:pointer;font-weight:700;font-family:'Inter',sans-serif">quitar</button>
     </div>
+    <button class="add-btn" style="margin-top:10px;width:100%" onclick="openCrearLeadModal()">+ Crear lead nuevo</button>
   </div>
 
   <div class="card">
@@ -184,6 +221,7 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
       <div><label>Nombre / empresa</label><input id="p-nom" placeholder="Consultorio Odontológico"></div>
       <div><label>Contacto y teléfono</label><input id="p-cont" placeholder="Noelia (223 504-4742)"></div>
       <div><label>Dirección / ubicación</label><input id="p-ubic" placeholder="Paso 2725"></div>
+      <div><label>CUIT / CUIL</label><input id="p-cuit" placeholder="20-12345678-9"></div>
       <div>
         <label>Fecha</label>
         <input type="date" id="p-fecha" value="2026-06-25">
@@ -280,12 +318,12 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
   </div>
 
   <div class="card">
-    <h2>Notas adicionales (opcional)</h2>
-    <textarea id="p-notas" style="min-height:52px" placeholder="Cualquier aclaración adicional..."></textarea>
+    <h2>Notas internas para la obra (no van al PDF del cliente)</h2>
+    <textarea id="p-notas" style="min-height:52px" placeholder="Instrucciones para el día del trabajo: acceso, horarios, contacto en obra..."></textarea>
   </div>
 
   <div class="status" id="p-st"></div>
-  <button class="btn" id="p-btn" onclick="runPresupuesto()">✦ Generar Presupuesto PDF</button>
+  <button class="btn" id="p-btn" onclick="runPresupuesto()" disabled>✦ Generar Presupuesto PDF</button>
 </div>
 </div>
 
@@ -367,18 +405,96 @@ function filterLeadsPresu(){
   renderLeadPickerList(filtered);
 }
 
+let selectedLeadPresu = null;
+
 function selectLeadPresu(i){
   const l = CURRENT_LEAD_LIST_PRESU[i];
   if(!l) return;
+  selectedLeadPresu = l;
   document.getElementById('p-nom').value = l.empresa || '';
   document.getElementById('p-cont').value = l.contacto || '';
   document.getElementById('p-ubic').value = l.direccion || '';
+  document.getElementById('p-cuit').value = l.cuit || '';
   document.getElementById('lead-picker-selected').style.display = 'block';
   document.getElementById('lead-picker-name').textContent = l.empresa;
+  document.getElementById('p-btn').disabled = false;
 }
 
 function clearLeadPicker(){
+  selectedLeadPresu = null;
   document.getElementById('lead-picker-selected').style.display = 'none';
+  document.getElementById('p-btn').disabled = true;
+}
+
+// ── Crear lead nuevo (desde Presupuesto) ─────────────────────
+function openCrearLeadModal(){
+  ['cl-empresa','cl-contacto','cl-rubro','cl-direccion','cl-cuit'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cl-canal').value='';
+  document.getElementById('cl-destino').value='leads';
+  document.getElementById('cl-status').textContent='';
+  toggleCuitCrearLead();
+  document.getElementById('crear-lead-modal').classList.add('open');
+}
+function closeCrearLeadModal(){
+  document.getElementById('crear-lead-modal').classList.remove('open');
+}
+function toggleCuitCrearLead(){
+  document.getElementById('cl-cuit-wrap').style.display = document.getElementById('cl-destino').value==='embudo' ? 'block' : 'none';
+}
+document.getElementById('crear-lead-modal').addEventListener('click', function(e){
+  if(e.target === this) closeCrearLeadModal();
+});
+
+async function submitCrearLead(){
+  const empresa = document.getElementById('cl-empresa').value.trim();
+  const destino = document.getElementById('cl-destino').value;
+  const statusEl = document.getElementById('cl-status');
+  if(!empresa){ statusEl.className='import-status err'; statusEl.textContent='Falta el nombre de la empresa.'; return; }
+
+  const btn = document.getElementById('cl-submit-btn');
+  btn.disabled = true;
+  statusEl.className='import-status'; statusEl.textContent='⏳ Guardando en el CRM...';
+
+  const payload = {
+    action: 'crear',
+    destino,
+    empresa,
+    contacto: document.getElementById('cl-contacto').value.trim(),
+    rubro: document.getElementById('cl-rubro').value.trim(),
+    canal: document.getElementById('cl-canal').value,
+    direccion: document.getElementById('cl-direccion').value.trim(),
+    cuit: destino==='embudo' ? document.getElementById('cl-cuit').value.trim() : ''
+  };
+
+  try{
+    const res = await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.msg||'Error al crear el lead');
+
+    const tipoMap = {leads:'Base Leads',embudo:'Embudo',alianzas:'Alianza'};
+    const nuevoLead = {
+      empresa, contacto: payload.contacto, estado: 'NUEVO', rubro: payload.rubro,
+      canal: payload.canal, direccion: payload.direccion, cuit: payload.cuit,
+      _tipo: tipoMap[destino]
+    };
+    ALL_LEADS_PRESU.push(nuevoLead);
+    selectedLeadPresu = nuevoLead;
+    document.getElementById('p-nom').value = empresa;
+    document.getElementById('p-cont').value = payload.contacto;
+    document.getElementById('p-ubic').value = payload.direccion;
+    document.getElementById('p-cuit').value = payload.cuit;
+    document.getElementById('lead-picker-selected').style.display = 'block';
+    document.getElementById('lead-picker-name').textContent = empresa;
+    document.getElementById('p-btn').disabled = false;
+    renderLeadPickerList(ALL_LEADS_PRESU);
+
+    closeCrearLeadModal();
+  }catch(e){
+    statusEl.className='import-status err';
+    statusEl.textContent='✗ '+e.message;
+  }finally{
+    btn.disabled = false;
+  }
 }
 
 // ── Tabs ────────────────────────────────────────────────────
@@ -606,6 +722,11 @@ function loadImg(event,arr,idx,renderFn){
 
 // ── IA ───────────────────────────────────────────────────────
 async function runPresupuesto(){
+  if(!selectedLeadPresu){
+    const st=document.getElementById('p-st');
+    st.className='status on err';st.textContent='Seleccioná un lead del CRM antes de generar.';
+    return;
+  }
   const btn=document.getElementById('p-btn'),st=document.getElementById('p-st');
   btn.disabled=true;btn.textContent='Generando...';
   st.className='status on';st.textContent='✦ La IA está redactando...';
@@ -621,8 +742,20 @@ async function runPresupuesto(){
     TX.presupuesto=d.contenido;
     st.textContent='✓ Texto listo. Armando PDF...';
     await pdfPresupuesto();
+    await guardarNotasInternas();
   }catch(e){st.className='status on err';st.textContent='Error: '+e.message;}
   finally{btn.disabled=false;btn.textContent='✦ Generar Presupuesto PDF';}
+}
+
+async function guardarNotasInternas(){
+  const notaTexto=g('p-notas').trim();
+  const cuit=g('p-cuit').trim();
+  if(!selectedLeadPresu || (!notaTexto && !cuit)) return;
+  const tipoKey = selectedLeadPresu._tipo==='Base Leads'?'leads':selectedLeadPresu._tipo==='Embudo'?'embudo':'alianzas';
+  try{
+    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({tipo:tipoKey,empresa:selectedLeadPresu.empresa,nota:notaTexto||undefined,cuit:cuit||undefined})});
+  }catch(e){}
 }
 
 async function runReporte(){
@@ -660,7 +793,7 @@ function footer(doc,W,H){
   doc.text('paisajismo@vivero212.com.ar',W-MM,fy+16,{align:'right'});
 }
 
-function pdfHeader(doc,W,nombre,contacto,fechaISO,validDias,ubic){
+function pdfHeader(doc,W,nombre,contacto,fechaISO,validDias,ubic,cuit){
   doc.setFillColor(250,250,248);doc.rect(0,0,W,58,'F');
   doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(...GR);
   doc.text(nombre.toUpperCase(),MM,22);
@@ -680,6 +813,7 @@ function pdfHeader(doc,W,nombre,contacto,fechaISO,validDias,ubic){
   const validStr=validDias?fechaStr+' | Validez: '+validDias+' días':fechaStr;
   mrow('Fecha',validStr);
   mrow('Ubicación',ubic);
+  mrow('CUIT/CUIL',cuit);
 
   try{doc.addImage(LOGO_COLOR,'PNG',W-66,6,50,34.5);}catch(e){}
 }
@@ -693,7 +827,7 @@ async function pdfPresupuesto(){
   const nombre=g('p-nom')||'CLIENTE';
   const etapa=g('p-etapa');
 
-  pdfHeader(doc,W,nombre,g('p-cont'),g('p-fecha'),g('p-valid'),g('p-ubic'));
+  pdfHeader(doc,W,nombre,g('p-cont'),g('p-fecha'),g('p-valid'),g('p-ubic'),g('p-cuit'));
   doc.setFillColor(...GR);doc.rect(0,58,W,H-58-22,'F');
 
   let y=72;
@@ -723,11 +857,6 @@ async function pdfPresupuesto(){
   const pl=doc.splitTextToSize(tx.propuesta||'[Propuesta]',cW);
   doc.text(pl,MM,y);y+=pl.length*6+10;
 
-  const notas=g('p-notas');
-  if(notas){
-    doc.setFont('helvetica','italic');doc.setFontSize(9.5);doc.setTextColor(190,210,195);
-    doc.text(doc.splitTextToSize(notas,cW),MM,y);
-  }
   footer(doc,W,H);
 
   doc.addPage();
