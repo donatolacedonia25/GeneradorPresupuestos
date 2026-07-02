@@ -348,7 +348,10 @@ async function cargarLeadsPresu(){
   }
 }
 
+let CURRENT_LEAD_LIST_PRESU = [];
+
 function renderLeadPickerList(arr){
+  CURRENT_LEAD_LIST_PRESU = arr;
   const el = document.getElementById('lead-picker-list');
   if(!arr.length){ el.innerHTML='<div style="padding:12px;font-size:12px;color:#aaa">Sin resultados</div>'; return; }
   el.innerHTML = arr.map((l,i)=>`
@@ -365,7 +368,7 @@ function filterLeadsPresu(){
 }
 
 function selectLeadPresu(i){
-  const l = ALL_LEADS_PRESU[i];
+  const l = CURRENT_LEAD_LIST_PRESU[i];
   if(!l) return;
   document.getElementById('p-nom').value = l.empresa || '';
   document.getElementById('p-cont').value = l.contacto || '';
