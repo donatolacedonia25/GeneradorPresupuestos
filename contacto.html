@@ -83,6 +83,19 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
 .sec-libre{display:none}
 .libre-hint{background:#f0f9f0;border-left:3px solid #52B788;padding:8px 12px;font-size:12px;color:#2D6A4F;border-radius:0 5px 5px 0;margin-bottom:12px}
 @media(max-width:800px){.main{grid-template-columns:1fr}.leads-list{max-height:280px}}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:10px;padding:26px;max-width:480px;width:95%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.18)}
+.modal h3{font-size:13px;font-weight:800;color:#1B4332;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px}
+.modal p{font-size:12px;color:#666;margin-bottom:16px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-actions .btn-sec{background:white;color:#1B4332;border:1.5px solid #1B4332;border-radius:5px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.modal-actions .btn-pri{background:#1B4332;color:white;border:none;border-radius:5px;padding:10px 20px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.modal-actions .btn-pri:hover{background:#2D6A4F}
+.import-status{font-size:11px;color:#2D6A4F}
+.import-status.err{color:#c0392b}
 </style>
 </head>
 <body>
@@ -100,6 +113,41 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
   <a href="/contacto.html" class="active">Mensajes</a>
 </div>
 
+<div class="modal-overlay" id="crear-lead-modal">
+  <div class="modal">
+    <h3>+ Crear lead nuevo</h3>
+    <p>Se guarda directo en el Sheet.</p>
+    <div class="form-grid">
+      <div class="full"><label>Empresa *</label><input id="cl-empresa" placeholder="Hotel Sainte Jeanne"></div>
+      <div><label>Contacto</label><input id="cl-contacto" placeholder="Sebastián (gerencia)"></div>
+      <div><label>Rubro</label><input id="cl-rubro" placeholder="Hotelería"></div>
+      <div><label>Canal</label>
+        <select id="cl-canal">
+          <option value="">— elegí el canal —</option>
+          <option value="WhatsApp">WhatsApp</option>
+          <option value="Mail">Mail</option>
+          <option value="Visita presencial">Visita presencial</option>
+          <option value="LinkedIn">LinkedIn</option>
+        </select>
+      </div>
+      <div><label>Dirección</label><input id="cl-direccion" placeholder="Av. Peralta Ramos 1234"></div>
+      <div><label>Destino *</label>
+        <select id="cl-destino" onchange="toggleCuitCrearLead()">
+          <option value="leads">Base Leads</option>
+          <option value="embudo">Embudo Activo</option>
+          <option value="alianzas">Alianzas</option>
+        </select>
+      </div>
+      <div class="full" id="cl-cuit-wrap" style="display:none"><label>CUIT / CUIL</label><input id="cl-cuit" placeholder="20-12345678-9"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-sec" onclick="closeCrearLeadModal()">Cancelar</button>
+      <button class="btn-pri" onclick="submitCrearLead()" id="cl-submit-btn">Crear lead</button>
+    </div>
+    <div class="import-status" id="cl-status" style="margin-top:8px;display:block"></div>
+  </div>
+</div>
+
 <div class="main">
 
   <!-- PANEL IZQUIERDO — Lista de leads -->
@@ -107,6 +155,9 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
     <div class="panel-header">
       <h2>CRM</h2>
       <span id="lead-count" style="font-size:11px;color:#888">cargando...</span>
+    </div>
+    <div style="padding:10px 12px;border-bottom:1px solid #f0f0f0">
+      <button class="reg-btn" style="width:100%;justify-content:center" onclick="openCrearLeadModal()">+ Nuevo Lead</button>
     </div>
     <div class="tabs-mini">
       <button class="tab-mini active" onclick="switchLeadTab('leads',this)">Base Leads</button>
@@ -406,6 +457,8 @@ function selectLead(idx, tipo) {
     </div>
     <div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Contacto:</strong> ${curLead.contacto}</div>
     ${curLead.valor ? `<div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Valor:</strong> ${curLead.valor}</div>` : ''}
+    ${curLead.direccion ? `<div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Dirección:</strong> ${curLead.direccion}</div>` : ''}
+    ${curLead.cuit ? `<div style="font-size:12px;color:#444;margin-bottom:4px"><strong>CUIT/CUIL:</strong> ${curLead.cuit}</div>` : ''}
     ${curLead.dias ? `<div style="font-size:12px;color:#666;margin-bottom:4px"><strong>Días sin contacto:</strong> ${curLead.dias}</div>` : ''}
     <div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Acción pendiente:</strong> ${curLead.accion || '—'}</div>
     ${curLead.notas ? `<div style="font-size:12px;color:#666;margin-top:4px;line-height:1.5">${curLead.notas}</div>` : ''}`;
@@ -595,6 +648,63 @@ async function registrarEnvio() {
     btn.disabled = false;
     btn.textContent = '✓ Confirmar registro';
     alert('Error al registrar: ' + e.message);
+  }
+}
+
+// ── Crear lead nuevo ──────────────────────────────────────────
+function openCrearLeadModal(){
+  ['cl-empresa','cl-contacto','cl-rubro','cl-direccion','cl-cuit'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cl-canal').value='';
+  document.getElementById('cl-destino').value='leads';
+  document.getElementById('cl-status').textContent='';
+  toggleCuitCrearLead();
+  document.getElementById('crear-lead-modal').classList.add('open');
+}
+function closeCrearLeadModal(){
+  document.getElementById('crear-lead-modal').classList.remove('open');
+}
+function toggleCuitCrearLead(){
+  document.getElementById('cl-cuit-wrap').style.display = document.getElementById('cl-destino').value==='embudo' ? 'block' : 'none';
+}
+document.getElementById('crear-lead-modal').addEventListener('click', function(e){
+  if(e.target === this) closeCrearLeadModal();
+});
+
+async function submitCrearLead(){
+  const empresa = document.getElementById('cl-empresa').value.trim();
+  const destino = document.getElementById('cl-destino').value;
+  const statusEl = document.getElementById('cl-status');
+  if(!empresa){ statusEl.className='import-status err'; statusEl.textContent='Falta el nombre de la empresa.'; return; }
+
+  const btn = document.getElementById('cl-submit-btn');
+  btn.disabled = true;
+  statusEl.className='import-status'; statusEl.textContent='⏳ Guardando en el CRM...';
+
+  const payload = {
+    action: 'crear',
+    destino,
+    empresa,
+    contacto: document.getElementById('cl-contacto').value.trim(),
+    rubro: document.getElementById('cl-rubro').value.trim(),
+    canal: document.getElementById('cl-canal').value,
+    direccion: document.getElementById('cl-direccion').value.trim(),
+    cuit: destino==='embudo' ? document.getElementById('cl-cuit').value.trim() : ''
+  };
+
+  try{
+    const res = await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.msg||'Error al crear el lead');
+
+    closeCrearLeadModal();
+    await cargarLeads();
+    const btnMap = {leads:document.querySelector('.tab-mini'),embudo:document.querySelectorAll('.tab-mini')[1],alianzas:document.querySelectorAll('.tab-mini')[2]};
+    switchLeadTab(destino, btnMap[destino]);
+  }catch(e){
+    statusEl.className='import-status err';
+    statusEl.textContent='✗ '+e.message;
+  }finally{
+    btn.disabled = false;
   }
 }
 
