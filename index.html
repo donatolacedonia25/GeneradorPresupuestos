@@ -139,6 +139,7 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 <div class="tabs">
   <div class="tab active" onclick="switchTab('presupuesto')">Presupuesto</div>
   <div class="tab" onclick="switchTab('reporte')">Reporte</div>
+  <div class="tab" onclick="switchTab('mantenimiento')">Mantenimiento</div>
   <a class="tab" href="/contacto.html">Mensajes</a>
 </div>
 
@@ -181,15 +182,9 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
           <option value="LinkedIn">LinkedIn</option>
         </select>
       </div>
-      <div><label>Dirección</label><input id="cl-direccion" placeholder="Av. Peralta Ramos 1234"></div>
-      <div><label>Destino *</label>
-        <select id="cl-destino" onchange="toggleCuitCrearLead()">
-          <option value="leads">Base Leads</option>
-          <option value="embudo">Embudo Activo</option>
-          <option value="alianzas">Alianzas</option>
-        </select>
-      </div>
-      <div class="full" id="cl-cuit-wrap" style="display:none"><label>CUIT / CUIL</label><input id="cl-cuit" placeholder="20-12345678-9"></div>
+      <div class="full"><label>Dirección</label><input id="cl-direccion" placeholder="Av. Peralta Ramos 1234"></div>
+      <div class="full" style="background:#e8f4ee;border-radius:5px;padding:8px 10px;font-size:12px;color:#1B4332">Este lead se crea directo en <strong>Embudo Activo</strong> — todo presupuesto necesita un lead con seguimiento activo.</div>
+      <div class="full"><label>CUIT / CUIL</label><input id="cl-cuit" placeholder="20-12345678-9"></div>
     </div>
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn-sec" onclick="closeCrearLeadModal()">Cancelar</button>
@@ -324,6 +319,16 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 
   <div class="status" id="p-st"></div>
   <button class="btn" id="p-btn" onclick="runPresupuesto()" disabled>✦ Generar Presupuesto PDF</button>
+
+  <div class="card" id="remito-wrap" style="display:none">
+    <h2>Remito de entrega</h2>
+    <div class="form-grid">
+      <div><label>Responsable del equipo</label><input id="rem-resp" value="Agustín"></div>
+      <div><label>% Seña</label><input id="rem-pct" type="number" value="50" min="0" max="100" oninput="updateRemitoPreview()"></div>
+    </div>
+    <div style="font-size:13px;color:#1B4332;margin:10px 0;padding:8px 12px;background:#f0f9f0;border-radius:5px" id="rem-preview"></div>
+    <button class="btn" style="background:#2D6A4F" onclick="pdfRemito()">🧾 Descargar Remito PDF</button>
+  </div>
 </div>
 </div>
 
@@ -357,6 +362,48 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 </div>
 </div>
 
+<div id="tab-mantenimiento" class="tab-content">
+<div class="container">
+  <div class="info">Calculadora de mantenimiento — misma lógica que la planilla base. Completá los datos de la visita y sumalo al presupuesto activo si corresponde.</div>
+
+  <div class="card">
+    <h2>Parámetros base (editables)</h2>
+    <div class="form-grid">
+      <div><label>Tarifa MO por hora/colaborador</label><input type="number" id="m-tarifa" value="40000" oninput="calcMantenimiento()"></div>
+      <div><label>Tiempo de viaje ida+vuelta (min)</label><input type="number" id="m-viaje" value="60" oninput="calcMantenimiento()"></div>
+      <div><label>Viáticos por empleado/visita</label><input type="number" id="m-viatico" value="8000" oninput="calcMantenimiento()"></div>
+      <div><label>Costo auto por visita</label><input type="number" id="m-auto" value="35000" oninput="calcMantenimiento()"></div>
+      <div><label>Fondo insumos/herramientas (mensual total)</label><input type="number" id="m-fondo" value="50000" oninput="calcMantenimiento()"></div>
+      <div><label>Clientes activos (prorrateo insumos)</label><input type="number" id="m-clientes" value="3" min="1" oninput="calcMantenimiento()"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Datos de la visita</h2>
+    <div class="form-grid">
+      <div><label>Cantidad de empleados</label><input type="number" id="m-empleados" value="2" min="1" oninput="calcMantenimiento()"></div>
+      <div><label>Duración de la visita (horas)</label><input type="number" id="m-duracion" value="1" step="0.5" min="0.5" oninput="calcMantenimiento()"></div>
+      <div><label>Frecuencia de visitas por mes</label><input type="number" id="m-frecuencia" value="1" min="1" oninput="calcMantenimiento()"></div>
+      <div><label>Cliente / nombre</label><input id="m-nombre" placeholder="Igual al del presupuesto si aplica"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Resultado</h2>
+    <div class="tot-row"><span class="lbl">Horas productivas</span><span class="val" id="m-hprod" style="font-size:13px">—</span></div>
+    <div class="tot-row"><span class="lbl">Horas de viaje</span><span class="val" id="m-hviaje" style="font-size:13px">—</span></div>
+    <div class="tot-row"><span class="lbl">Mano de obra</span><span class="val" id="m-mo" style="font-size:13px">—</span></div>
+    <div class="tot-row"><span class="lbl">Viáticos</span><span class="val" id="m-viaticos-tot" style="font-size:13px">—</span></div>
+    <div class="tot-row"><span class="lbl">Auto</span><span class="val" id="m-auto-tot" style="font-size:13px">—</span></div>
+    <div class="tot-row" style="border-top:1px solid #e5ede5;padding-top:8px;margin-top:4px"><span class="lbl">TOTAL POR VISITA</span><span class="val" id="m-visita">$0</span></div>
+    <div class="tot-row"><span class="lbl">Subtotal visitas/mes (sin insumos)</span><span class="val" id="m-subtotal" style="font-size:13px">—</span></div>
+    <div class="tot-row"><span class="lbl">Fondo insumos prorrateado</span><span class="val" id="m-insumos" style="font-size:13px">—</span></div>
+    <div class="efect-row"><span class="lbl">TOTAL MENSUAL A COBRAR</span><span class="val" id="m-mensual">$0</span></div>
+    <button class="add-btn" style="margin-top:12px;width:100%" onclick="agregarMantenimientoAPresupuesto()">+ Agregar como ítem al Presupuesto</button>
+  </div>
+</div>
+</div>
+
 <script>
 const LOGO_WHITE='data:image/png;base64,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';
 const LOGO_COLOR='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAADICAYAAABMFuzmAADGeUlEQVR4nOz9d5Qk13nfjX8qdU6Tc57Znc05YxPyIogAF8gESQQxIAgSjKKopChKliyaCpQpO1i2ZFuBzAxFO9ChREEEQQIkQBAAQeQchGWO1L07eSb0zvv6+eOttHYw92hlBn2j0MvNOnr69ru1JAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3/MvmSJfZ/QY7AQAAAAASUVORK5CYII=';
@@ -367,7 +414,7 @@ let TX={presupuesto:null,reporte:null};
 let modalItems=[];
 
 // ── Lead picker CRM ─────────────────────────────────────────
-const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx0xvMhxr9kLNFrJu7UiKM0ROS9coG-WNeFXyCuoaS1p5epRUn6RsH9DXgQc_NnHCYA/exec';
+const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwAKDzLW0dMZUKGzfBwdvcaoCHSebvr1Lzo1n0HTQo5Ft6M7QQbAhz9uE_1RLNW2Y9u/exec';
 let ALL_LEADS_PRESU = [];
 
 async function cargarLeadsPresu(){
@@ -424,22 +471,18 @@ function clearLeadPicker(){
   selectedLeadPresu = null;
   document.getElementById('lead-picker-selected').style.display = 'none';
   document.getElementById('p-btn').disabled = true;
+  document.getElementById('remito-wrap').style.display = 'none';
 }
 
 // ── Crear lead nuevo (desde Presupuesto) ─────────────────────
 function openCrearLeadModal(){
   ['cl-empresa','cl-contacto','cl-rubro','cl-direccion','cl-cuit'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('cl-canal').value='';
-  document.getElementById('cl-destino').value='leads';
   document.getElementById('cl-status').textContent='';
-  toggleCuitCrearLead();
   document.getElementById('crear-lead-modal').classList.add('open');
 }
 function closeCrearLeadModal(){
   document.getElementById('crear-lead-modal').classList.remove('open');
-}
-function toggleCuitCrearLead(){
-  document.getElementById('cl-cuit-wrap').style.display = document.getElementById('cl-destino').value==='embudo' ? 'block' : 'none';
 }
 document.getElementById('crear-lead-modal').addEventListener('click', function(e){
   if(e.target === this) closeCrearLeadModal();
@@ -447,7 +490,7 @@ document.getElementById('crear-lead-modal').addEventListener('click', function(e
 
 async function submitCrearLead(){
   const empresa = document.getElementById('cl-empresa').value.trim();
-  const destino = document.getElementById('cl-destino').value;
+  const destino = 'embudo';
   const statusEl = document.getElementById('cl-status');
   if(!empresa){ statusEl.className='import-status err'; statusEl.textContent='Falta el nombre de la empresa.'; return; }
 
@@ -463,7 +506,7 @@ async function submitCrearLead(){
     rubro: document.getElementById('cl-rubro').value.trim(),
     canal: document.getElementById('cl-canal').value,
     direccion: document.getElementById('cl-direccion').value.trim(),
-    cuit: destino==='embudo' ? document.getElementById('cl-cuit').value.trim() : ''
+    cuit: document.getElementById('cl-cuit').value.trim()
   };
 
   try{
@@ -471,11 +514,10 @@ async function submitCrearLead(){
     const data = await res.json();
     if(!data.ok) throw new Error(data.msg||'Error al crear el lead');
 
-    const tipoMap = {leads:'Base Leads',embudo:'Embudo',alianzas:'Alianza'};
     const nuevoLead = {
       empresa, contacto: payload.contacto, estado: 'NUEVO', rubro: payload.rubro,
       canal: payload.canal, direccion: payload.direccion, cuit: payload.cuit,
-      _tipo: tipoMap[destino]
+      _tipo: 'Embudo'
     };
     ALL_LEADS_PRESU.push(nuevoLead);
     selectedLeadPresu = nuevoLead;
@@ -499,7 +541,7 @@ async function submitCrearLead(){
 
 // ── Tabs ────────────────────────────────────────────────────
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(t==='presupuesto'&&i===0)||(t==='reporte'&&i===1)));
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(t==='presupuesto'&&i===0)||(t==='reporte'&&i===1)||(t==='mantenimiento'&&i===2)));
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
 }
@@ -777,6 +819,51 @@ async function runReporte(){
   finally{btn.disabled=false;btn.textContent='✦ Generar Reporte PDF';}
 }
 
+// ── MANTENIMIENTO ──────────────────────────────────────────────
+function calcMantenimiento(){
+  const tarifa=parseFloat(g('m-tarifa'))||0;
+  const viajeMin=parseFloat(g('m-viaje'))||0;
+  const viatico=parseFloat(g('m-viatico'))||0;
+  const auto=parseFloat(g('m-auto'))||0;
+  const fondo=parseFloat(g('m-fondo'))||0;
+  const clientesActivos=parseFloat(g('m-clientes'))||1;
+  const empleados=parseFloat(g('m-empleados'))||0;
+  const duracion=parseFloat(g('m-duracion'))||0;
+  const frecuencia=parseFloat(g('m-frecuencia'))||0;
+
+  const hProd=empleados*duracion;
+  const hViaje=empleados*(viajeMin/60);
+  const hFact=hProd+hViaje;
+  const mo=hFact*tarifa;
+  const viaticosTot=empleados*viatico;
+  const totalVisita=mo+viaticosTot+auto;
+  const subtotal=totalVisita*frecuencia;
+  const insumosProrrateado=fondo/clientesActivos;
+  const totalMensual=subtotal+insumosProrrateado;
+
+  document.getElementById('m-hprod').textContent=hProd.toFixed(1)+' h';
+  document.getElementById('m-hviaje').textContent=hViaje.toFixed(1)+' h';
+  document.getElementById('m-mo').textContent=fmt(mo);
+  document.getElementById('m-viaticos-tot').textContent=fmt(viaticosTot);
+  document.getElementById('m-auto-tot').textContent=fmt(auto);
+  document.getElementById('m-visita').textContent=fmt(totalVisita);
+  document.getElementById('m-subtotal').textContent=fmt(subtotal);
+  document.getElementById('m-insumos').textContent=fmt(insumosProrrateado);
+  document.getElementById('m-mensual').textContent=fmt(totalMensual);
+
+  return {totalVisita, totalMensual, frecuencia};
+}
+
+function agregarMantenimientoAPresupuesto(){
+  const r=calcMantenimiento();
+  const frecuenciaTxt=r.frecuencia===1?'mensual':`${r.frecuencia}x por mes`;
+  pItems.push({p:'Mantenimiento — '+frecuenciaTxt, q:1, u:r.totalMensual});
+  renderItems();
+  const nombreM=g('m-nombre').trim();
+  if(nombreM && !g('p-nom').trim()) document.getElementById('p-nom').value=nombreM;
+  switchTab('presupuesto');
+}
+
 // ── PDF helpers ──────────────────────────────────────────────
 const GR=[27,67,50],GR2=[45,106,79],ACC=[82,183,136];
 const MM=16;
@@ -963,6 +1050,122 @@ async function pdfPresupuesto(){
   doc.save(fn);
   document.getElementById('p-st').className='status on';
   document.getElementById('p-st').textContent='✓ PDF descargado: '+fn;
+  guardarPDFEnDrive(doc, fn);
+  document.getElementById('remito-wrap').style.display='block';
+  updateRemitoPreview();
+}
+
+async function guardarPDFEnDrive(doc, filename){
+  if(!selectedLeadPresu || selectedLeadPresu._tipo!=='Embudo') return;
+  try{
+    const datauri = doc.output('datauristring');
+    const base64 = datauri.split(',')[1];
+    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'guardarPDF', empresa:selectedLeadPresu.empresa, base64, filename})});
+  }catch(e){}
+}
+
+// ── REMITO ──────────────────────────────────────────────────
+function nroRemito(){
+  const d=new Date();
+  const ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+  return ymd+'-'+(Math.floor(Math.random()*90000)+10000);
+}
+
+function updateRemitoPreview(){
+  const total=pItems.reduce((s,i)=>s+i.q*i.u,0)+pEjec;
+  const pct=parseFloat(g('rem-pct'))||0;
+  const monto=Math.round(total*pct/100);
+  const saldo=total-monto;
+  document.getElementById('rem-preview').innerHTML=
+    `Total: <strong>${fmt(total)}</strong> &nbsp;·&nbsp; Seña (${pct}%): <strong>${fmt(monto)}</strong> &nbsp;·&nbsp; Saldo: <strong>${fmt(saldo)}</strong>`;
+}
+
+async function pdfRemito(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,H=297,cW=W-32;
+  const nombre=g('p-nom')||'CLIENTE';
+  const responsable=g('rem-resp')||'Agustín';
+  const pct=parseFloat(g('rem-pct'))||0;
+  const total=pItems.reduce((s,i)=>s+i.q*i.u,0)+pEjec;
+  const montoSena=Math.round(total*pct/100);
+  const saldo=total-montoSena;
+  const nro=nroRemito();
+
+  doc.setFillColor(...GR);doc.rect(0,0,W,42,'F');
+  try{doc.addImage(LOGO_WHITE,'PNG',MM,8,26,26);}catch(e){}
+  doc.setFont('helvetica','bold');doc.setFontSize(17);doc.setTextColor(255,255,255);
+  doc.text('PAISAJISMO 212',MM+32,20);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(200,225,210);
+  doc.text('REMITO — No válido como factura',MM+32,27);
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(255,255,255);
+  doc.text('N° '+nro,W-MM,20,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);
+  doc.text(fechaES(new Date().toISOString().slice(0,10)),W-MM,27,{align:'right'});
+
+  let y=56;
+  doc.setFont('helvetica','normal');doc.setFontSize(10.5);doc.setTextColor(50,50,50);
+  const infoRow=(lbl,val)=>{
+    if(!val)return;
+    doc.setFont('helvetica','bold');doc.setTextColor(...GR);
+    const lw=doc.getTextWidth(lbl+': ');
+    doc.text(lbl+': ',MM,y);
+    doc.setFont('helvetica','normal');doc.setTextColor(50,50,50);
+    doc.text(val,MM+lw,y);
+    y+=7;
+  };
+  infoRow('Cliente',nombre);
+  infoRow('Dirección',g('p-ubic'));
+  infoRow('Responsable del equipo',responsable);
+  y+=4;
+
+  const cx=[MM,MM+cW*0.60,MM+cW*0.60+cW*0.15];
+  const cws=[cW*0.60,cW*0.15,cW*0.25];
+  doc.setFillColor(...GR);doc.rect(MM,y,cW,9,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(255,255,255);
+  doc.text('DESCRIPCIÓN',cx[0]+2,y+6);
+  doc.text('CANT.',cx[1]+cws[1]/2,y+6,{align:'center'});
+  doc.text('TOTAL',cx[2]+2,y+6);
+  y+=9;
+
+  pItems.forEach((it,i)=>{
+    if(i%2===0){doc.setFillColor(246,251,246);doc.rect(MM,y,cW,8.5,'F');}
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(25,25,25);
+    doc.text((it.p||'').substring(0,55),cx[0]+2,y+6);
+    doc.text(String(it.q),cx[1]+cws[1]/2,y+6,{align:'center'});
+    doc.text(fmt(it.q*it.u),cx[2]+2,y+6);
+    y+=8.5;
+  });
+  if(pEjec>0){
+    doc.setFillColor(246,251,246);doc.rect(MM,y,cW,8.5,'F');
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(25,25,25);
+    doc.text('Ejecución integral y logística',cx[0]+2,y+6);
+    doc.text(fmt(pEjec),cx[2]+2,y+6);
+    y+=8.5;
+  }
+
+  y+=2;
+  doc.setFillColor(...GR);doc.rect(MM,y,cW,10,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(255,255,255);
+  doc.text('TOTAL',cx[0]+2,y+7);doc.text(fmt(total),W-MM-2,y+7,{align:'right'});
+  y+=10;
+
+  if(montoSena>0){
+    doc.setFillColor(255,248,230);doc.rect(MM,y,cW,9,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(140,90,20);
+    doc.text('Seña ('+pct+'%)',cx[0]+2,y+6.5);doc.text('− '+fmt(montoSena),W-MM-2,y+6.5,{align:'right'});
+    y+=9;
+    doc.setFillColor(253,236,234);doc.rect(MM,y,cW,10,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(192,57,43);
+    doc.text('SALDO RESTANTE',cx[0]+2,y+7);doc.text(fmt(saldo),W-MM-2,y+7,{align:'right'});
+    y+=10;
+  }
+
+  footer(doc,W,H);
+
+  const fn='Remito_212_'+nombre.replace(/\s+/g,'_')+'.pdf';
+  doc.save(fn);
 }
 
 // ── PDF REPORTE ──────────────────────────────────────────────
@@ -1024,6 +1227,7 @@ addItem();addItem();addItem();
 addFoto();addFoto();
 addFotoR();addFotoR();
 recalc();
+calcMantenimiento();
 cargarLeadsPresu();
 if(location.hash === '#reporte') switchTab('reporte');
 </script>
