@@ -510,7 +510,7 @@ async function submitCrearLead(){
   };
 
   try{
-    const res = await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res = await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const data = await res.json();
     if(!data.ok) throw new Error(data.msg||'Error al crear el lead');
 
@@ -795,7 +795,7 @@ async function guardarNotasInternas(){
   if(!selectedLeadPresu || (!notaTexto && !cuit)) return;
   const tipoKey = selectedLeadPresu._tipo==='Base Leads'?'leads':selectedLeadPresu._tipo==='Embudo'?'embudo':'alianzas';
   try{
-    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({tipo:tipoKey,empresa:selectedLeadPresu.empresa,nota:notaTexto||undefined,cuit:cuit||undefined})});
   }catch(e){}
 }
@@ -1060,7 +1060,7 @@ async function guardarPDFEnDrive(doc, filename){
   try{
     const datauri = doc.output('datauristring');
     const base64 = datauri.split(',')[1];
-    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({action:'guardarPDF', empresa:selectedLeadPresu.empresa, base64, filename})});
   }catch(e){}
 }
