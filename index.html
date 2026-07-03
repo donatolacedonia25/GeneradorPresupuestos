@@ -123,6 +123,8 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 .info { background: #f0f9f0; border-left: 3px solid #52B788; padding: 10px 14px; font-size: 12px; color: #2D6A4F; border-radius: 0 5px 5px 0; margin-bottom: 14px; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+.pos-frame-wrap { width: 100%; height: calc(100vh - 108px); background: #fff; }
+.pos-frame-wrap iframe { width: 100%; height: 100%; border: none; display: block; }
 @media(max-width:580px){ .form-grid{grid-template-columns:1fr;} .fotos-grid{grid-template-columns:1fr;} .modal-actions{flex-direction:column;} }
 </style>
 </head>
@@ -137,10 +139,10 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('presupuesto')">Presupuesto</div>
-  <div class="tab" onclick="switchTab('reporte')">Reporte</div>
-  <div class="tab" onclick="switchTab('mantenimiento')">Mantenimiento</div>
+  <div class="tab active" data-tab="presupuesto" onclick="switchTab('presupuesto')">Presupuesto</div>
+  <div class="tab" data-tab="mantenimiento" onclick="switchTab('mantenimiento')">Mantenimiento</div>
   <a class="tab" href="/contacto.html">Mensajes</a>
+  <div class="tab" data-tab="pos" onclick="switchTab('pos')">POS</div>
 </div>
 
 <!-- Modal de confirmación de ítems importados -->
@@ -332,39 +334,14 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 </div>
 </div>
 
-<div id="tab-reporte" class="tab-content">
-<div class="container">
-  <div class="info">Completá los datos de la visita y agregá fotos con epígrafes → PDF listo.</div>
-  <div class="card">
-    <h2>Datos de la visita</h2>
-    <div class="form-grid">
-      <div><label>Nombre / empresa</label><input id="r-nom" placeholder="Shell — Dos sucursales"></div>
-      <div><label>Contacto</label><input id="r-cont" placeholder="Andrea (223 XXX-XXXX)"></div>
-      <div><label>Fecha de visita</label><input type="date" id="r-fecha" value="2026-06-25"></div>
-      <div><label>Ubicación</label><input id="r-ubic" placeholder="Constitución y La Costa / Ruta 88"></div>
-    </div>
-  </div>
-  <div class="card">
-    <h2>Trabajos realizados (para la IA)</h2>
-    <div class="form-grid">
-      <div class="full"><label>Tareas de rutina</label><textarea id="r-rut" placeholder="Control hídrico&#10;Poda de limpieza"></textarea></div>
-      <div class="full"><label>Trabajos específicos por sucursal / sector</label><textarea id="r-esp" placeholder="Shell Don Félix: reubicación Strelitzia con hoja quemada.&#10;Shell El Peñón: limpieza follaje 100%."></textarea></div>
-      <div class="full"><label>Novedades o alertas (opcional)</label><textarea id="r-nov" style="min-height:52px" placeholder="Maceta rota en cafetería Don Félix."></textarea></div>
-    </div>
-  </div>
-  <div class="card">
-    <h2>Fotos con epígrafes</h2>
-    <div class="fotos-grid" id="r-fotos-grid"></div>
-    <button class="add-btn" style="margin-top:16px" onclick="addFotoR()">+ Agregar foto</button>
-  </div>
-  <div class="status" id="r-st"></div>
-  <button class="btn" id="r-btn" onclick="runReporte()">✦ Generar Reporte PDF</button>
-</div>
-</div>
-
 <div id="tab-mantenimiento" class="tab-content">
 <div class="container">
-  <div class="info">Calculadora de mantenimiento — misma lógica que la planilla base. Completá los datos de la visita y sumalo al presupuesto activo si corresponde.</div>
+  <div class="info">Reporte de visita de mantenimiento — completá los datos, agregá fotos con epígrafes → PDF listo. Si necesitás cotizar, abrí la calculadora.</div>
+
+  <button class="add-btn" style="width:100%;margin-bottom:14px;font-size:13px;padding:10px" id="calc-toggle-btn" onclick="toggleCalculadora()">🧮 Calculadora de mantenimiento</button>
+
+  <div id="calc-section" style="display:none">
+  <div class="info">Misma lógica que la planilla base. Calculá el mensual y sumalo al presupuesto activo si corresponde.</div>
 
   <div class="card">
     <h2>Parámetros base (editables)</h2>
@@ -401,12 +378,49 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
     <div class="efect-row"><span class="lbl">TOTAL MENSUAL A COBRAR</span><span class="val" id="m-mensual">$0</span></div>
     <button class="add-btn" style="margin-top:12px;width:100%" onclick="agregarMantenimientoAPresupuesto()">+ Agregar como ítem al Presupuesto</button>
   </div>
+  </div>
+
+    <div class="card">
+    <h2>Datos de la visita</h2>
+    <div class="form-grid">
+      <div><label>Nombre / empresa</label><input id="r-nom" placeholder="Shell — Dos sucursales"></div>
+      <div><label>Contacto</label><input id="r-cont" placeholder="Andrea (223 XXX-XXXX)"></div>
+      <div><label>Fecha de visita</label><input type="date" id="r-fecha" value="2026-06-25"></div>
+      <div><label>Ubicación</label><input id="r-ubic" placeholder="Constitución y La Costa / Ruta 88"></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Trabajos realizados (para la IA)</h2>
+    <div class="form-grid">
+      <div class="full"><label>Tareas de rutina</label><textarea id="r-rut" placeholder="Control hídrico&#10;Poda de limpieza"></textarea></div>
+      <div class="full"><label>Trabajos específicos por sucursal / sector</label><textarea id="r-esp" placeholder="Shell Don Félix: reubicación Strelitzia con hoja quemada.&#10;Shell El Peñón: limpieza follaje 100%."></textarea></div>
+      <div class="full"><label>Novedades o alertas (opcional)</label><textarea id="r-nov" style="min-height:52px" placeholder="Maceta rota en cafetería Don Félix."></textarea></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Fotos con epígrafes</h2>
+    <div class="fotos-grid" id="r-fotos-grid"></div>
+    <button class="add-btn" style="margin-top:16px" onclick="addFotoR()">+ Agregar foto</button>
+  </div>
+  <div class="status" id="r-st"></div>
+  <button class="btn" id="r-btn" onclick="runReporte()">✦ Generar Reporte PDF</button>
 </div>
+</div>
+
+<div id="tab-pos" class="tab-content">
+  <div class="pos-frame-wrap">
+    <iframe
+      id="pos-iframe"
+      src="about:blank"
+      title="POS Paisajismo 212"
+      allow="clipboard-write"
+    ></iframe>
+  </div>
 </div>
 
 <script>
 const LOGO_WHITE='data:image/png;base64,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';
-const LOGO_COLOR='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAADICAYAAABMFuzmAADGeUlEQVR4nOz9d5Qk13nfjX8qdU6Tc57Znc05YxPyIogAF8gESQQxIAgSjKKopChKliyaCpQpO1i2ZFuBzAxFO9ChREEEQQIkQBAAQeQchGWO1L07eSb0zvv6+eOttHYw92hlBn2j0MvNOnr69ru1JAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3/MvmSJfZ/QY7AQAAAAASUVORK5CYII=';
+const LOGO_COLOR='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASIAAADICAYAAABMFuzmAADGeUlEQVR4nOz9d5Qk13nfjX8qdU6Tc57Znc05YxPyIogAF8gESQQxIAgSjKKopChKliyaCpQpO1i2ZFuBzAxFO9ChREEEQQIkQBAAQeQchGWO1L07eSb0zvv6+eOntHZw92hlBn2j0MvNOnr69ru1JAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3/MvmSJfZ/QY7AQAAAAASUVORK5CYII=';
 
 let pItems=[], pOpc=[], pFotos=[], rFotos=[];
 let pEjec=0;
@@ -415,6 +429,10 @@ let modalItems=[];
 
 // ── Lead picker CRM ─────────────────────────────────────────
 const WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwAKDzLW0dMZUKGzfBwdvcaoCHSebvr1Lzo1n0HTQo5Ft6M7QQbAhz9uE_1RLNW2Y9u/exec';
+// URL del deploy Web App del POS (Bloque D2 — /exec del Código.gs del POS)
+const POS_URL = 'https://script.google.com/macros/s/AKfycbw-p69UYGUUQKcVZaA2JctNMH4uw0D4zQ8K2uRq6LMpSOFFHBk--wljW0o4MAWgrE68mQ/exec';
+let posLoaded = false;
+
 let ALL_LEADS_PRESU = [];
 
 async function cargarLeadsPresu(){
@@ -541,9 +559,25 @@ async function submitCrearLead(){
 
 // ── Tabs ────────────────────────────────────────────────────
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',(t==='presupuesto'&&i===0)||(t==='reporte'&&i===1)||(t==='mantenimiento'&&i===2)));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.toggle('active', el.dataset.tab===t));
   document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
+  if(t==='pos') loadPosFrame();
+}
+
+function toggleCalculadora(){
+  const sec=document.getElementById('calc-section');
+  const btn=document.getElementById('calc-toggle-btn');
+  const abierto = sec.style.display!=='none';
+  sec.style.display = abierto ? 'none' : 'block';
+  btn.textContent = abierto ? '🧮 Calculadora de mantenimiento' : '✕ Cerrar calculadora';
+}
+
+// Carga el iframe del POS recién al entrar al tab (lazy load, evita pedir el Web App al abrir la página)
+function loadPosFrame(){
+  if(posLoaded) return;
+  document.getElementById('pos-iframe').src = POS_URL;
+  posLoaded = true;
 }
 
 // ── Helpers ─────────────────────────────────────────────────
@@ -1229,7 +1263,8 @@ addFotoR();addFotoR();
 recalc();
 calcMantenimiento();
 cargarLeadsPresu();
-if(location.hash === '#reporte') switchTab('reporte');
+if(location.hash === '#reporte' || location.hash === '#mantenimiento') switchTab('mantenimiento');
+if(location.hash === '#pos') switchTab('pos');
 </script>
 </body>
 </html>
