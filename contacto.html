@@ -636,7 +636,7 @@ async function registrarEnvio() {
   try {
     const res = await fetch(WEBHOOK_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
     });
     const data = await res.json();
@@ -692,7 +692,7 @@ async function submitCrearLead(){
   };
 
   try{
-    const res = await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const res = await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const data = await res.json();
     if(!data.ok) throw new Error(data.msg||'Error al crear el lead');
 
