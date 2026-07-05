@@ -42,6 +42,14 @@ function parseJSON(text) {
   }
 }
 
+// Recorta a N palabras como red de seguridad, por si el modelo se pasa del límite.
+function limitWords(str, n) {
+  if (!str) return str;
+  const words = str.trim().split(/\s+/);
+  if (words.length <= n) return str.trim();
+  return words.slice(0, n).join(' ') + '…';
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -82,6 +90,7 @@ Rules:
 - If you see total price and quantity, calculate unit price = total / quantity
 - If no quantity, use 1. If price unreadable, use 0
 - Skip rows that are TOTAL, subtotal or column headers
+- If a row is labeled "EJECUCIÓN COMPLETA Y LOGÍSTICA" or similar (execution/logistics line with no per-unit quantity), set "cantidad":1 and "precioUnitario" equal to that row's TOTAL value directly (do not divide it)
 ONLY JSON. START WITH {`
             }
           ]
@@ -100,30 +109,31 @@ ONLY JSON. START WITH {`
     try {
       const r = await claudeRequest(apiKey, {
         model: 'claude-sonnet-4-6',
-        max_tokens: 1024,
+        max_tokens: 700,
         messages: [{
           role: 'user',
           content: `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
 RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
-Format: {"descripcion":"text","objetivos":"text","propuesta":"text"}
+Format: {"descripcion":"text"}
 
-Write in Spanish. Use this data:
-- Tipo de espacio: ${datos.tipoEspacio || ''}
-- Objetivo: ${datos.objetivo || ''}
-- Propuesta técnica: ${datos.propuesta || ''}
-- Etapa: ${datos.etapaProyecto || ''}
+Write in Spanish. Use this data as raw context (may be long, unordered, informal):
+- Ubicación: ${datos.ubicacion || ''}
+- Etapa / título del proyecto: ${datos.etapaProyecto || ''}
+- Contexto completo (tipo de espacio, objetivo, propuesta técnica, especies, etapa, lo que aporte el usuario): ${datos.contexto || ''}
 
-Style rules:
-- descripcion: start with "Tras la visita..." + concrete context
-- objetivos: first landscaping goals, then practical benefit
-- propuesta: specific with species and technique, end with "El servicio incluye provisión, preparación del espacio y colocación final."
-- Tone: professional and close, no marketing language
+Style rules for "descripcion":
+- ONE single persuasive paragraph (or a short paragraph plus a brief bulleted breakdown by sector if the context describes multiple distinct sectors/zones — mirror the tone of a landscaping proposal, not a marketing pitch).
+- Start with something like "Tras el relevamiento del espacio..." or "Tras la visita..." + concrete context.
+- Cover: what was found, the objective, the technical proposal (species, techniques), and close with what the service includes (provisión, preparación del espacio, colocación final).
+- Tone: professional and close, no marketing language, no generic AI phrasing.
+- HARD LIMIT: máximo 160 palabras en total. Si el contexto es extenso, resumí y priorizá lo esencial — nunca superes 160 palabras.
 
 ONLY JSON. START WITH {`
         }]
       });
 
       const contenido = parseJSON(extractText(r));
+      contenido.descripcion = limitWords(contenido.descripcion, 160);
       return res.status(200).json({ ok: true, contenido });
 
     } catch(e) {
