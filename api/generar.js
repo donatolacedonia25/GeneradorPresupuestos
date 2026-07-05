@@ -50,6 +50,12 @@ function limitWords(str, n) {
   return words.slice(0, n).join(' ') + '…';
 }
 
+// Red de seguridad: saca markdown (**, *, #) por si el modelo lo devuelve pese a la instrucción.
+function stripMarkdown(str) {
+  if (!str) return str;
+  return str.replace(/\*\*/g, '').replace(/\*/g, '').replace(/^#+\s?/gm, '').trim();
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -126,6 +132,7 @@ Style rules for "descripcion":
 - Start with something like "Tras el relevamiento del espacio..." or "Tras la visita..." + concrete context.
 - Cover: what was found, the objective, the technical proposal (species, techniques), and close with what the service includes (provisión, preparación del espacio, colocación final).
 - Tone: professional and close, no marketing language, no generic AI phrasing.
+- PLAIN TEXT ONLY. Never use markdown formatting: no **bold**, no *italics*, no # headers, no "-" or "*" bullet lists. Write it as flowing prose a human would type directly into a document, with no formatting symbols at all.
 - HARD LIMIT: máximo 160 palabras en total. Si el contexto es extenso, resumí y priorizá lo esencial — nunca superes 160 palabras.
 
 ONLY JSON. START WITH {`
@@ -133,7 +140,7 @@ ONLY JSON. START WITH {`
       });
 
       const contenido = parseJSON(extractText(r));
-      contenido.descripcion = limitWords(contenido.descripcion, 160);
+      contenido.descripcion = limitWords(stripMarkdown(contenido.descripcion), 160);
       return res.status(200).json({ ok: true, contenido });
 
     } catch(e) {
