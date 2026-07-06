@@ -1139,21 +1139,44 @@ function drawText(doc, text, x, y, maxWidth, style, align){
 }
 
 // Ítem de lista con etiqueta en negrita seguida de texto regular, ambos en tipografía body.
-function drawLabeledItem(doc, label, text, x, y, maxWidth){
+// colors: {label, text} — permite variante clara (sobre fondo verde) u oscura (sobre fondo blanco).
+function drawLabeledItem(doc, label, text, x, y, maxWidth, colors, gapAfter){
+  colors = colors || {label:GREEN, text:[45,45,45]};
+  gapAfter = gapAfter===undefined ? 20 : gapAfter;
   const bodySize=18, lh=1.6;
   doc.setLineHeightFactor(lh);
   const charSpace = bodySize*PX_PER_PT*(20/1000);
-  doc.setFont(FONT_MAP.bold,'normal');doc.setFontSize(bodySize);doc.setTextColor(...GREEN);
+  doc.setFont(FONT_MAP.bold,'normal');doc.setFontSize(bodySize);doc.setTextColor(...colors.label);
   const labelPart='• '+label+': ';
   doc.text(labelPart, x, y, {charSpace});
   const labelWidth = doc.getTextWidth(labelPart) + charSpace*labelPart.length;
-  doc.setFont(FONT_MAP.regular,'normal');doc.setTextColor(45,45,45);
+  doc.setFont(FONT_MAP.regular,'normal');doc.setTextColor(...colors.text);
   const lines = doc.splitTextToSize(text||'', maxWidth-labelWidth);
   const lineH = bodySize*PX_PER_PT*lh;
   doc.text(lines[0]||'', x+labelWidth, y, {charSpace});
   let cy=y;
   for(let i=1;i<lines.length;i++){ cy+=lineH; doc.text(lines[i], x, cy, {charSpace}); }
-  return cy+lineH+20;
+  return cy+lineH+gapAfter;
+}
+
+// Mide la altura que ocuparía un párrafo o un ítem con etiqueta SIN dibujar nada —
+// necesario para decidir espaciados antes de renderizar (evita que el texto se corte
+// contra el footer o quede con huecos raros).
+function measureParagraphHeight(doc, text, maxWidth, style){
+  setStyle(doc,style);
+  const lines = doc.splitTextToSize(text||'', maxWidth);
+  const lineH = style.size*PX_PER_PT*Math.max(1.5,style.lineHeight);
+  return lines.length*lineH;
+}
+function measureLabeledItemHeight(doc, label, text, maxWidth){
+  const bodySize=18, lh=1.6;
+  doc.setFont(FONT_MAP.bold,'normal');doc.setFontSize(bodySize);
+  const charSpace = bodySize*PX_PER_PT*(20/1000);
+  const labelPart='• '+label+': ';
+  const labelWidth = doc.getTextWidth(labelPart) + charSpace*labelPart.length;
+  const lines = doc.splitTextToSize(text||'', maxWidth-labelWidth);
+  const lineH = bodySize*PX_PER_PT*lh;
+  return lines.length*lineH;
 }
 
 // Footers como IMAGEN — recorte 1:1 del PDF de referencia (con íconos reales), nunca texto.
@@ -1202,7 +1225,12 @@ async function pdfPresupuesto(){
   const nombreMostrado = displayNombreCliente(nombreRaw, contactoRaw);
   const contactoLimpio = sanitizeContacto(contactoRaw);
   const etapa=g('p-etapa').trim();
-  const descripcion = stripMarkdown(limitWords(tx.descripcion||'[Descripción del proyecto]',160));
+
+  // Contrato de la IA: intro (párrafo) + zonas/tareas opcionales (bullets, solo si aplica) + cierre (párrafo).
+  // Fallback a formato viejo (tx.descripcion) por compatibilidad si TX aún no fue regenerado.
+  const introTxt = stripMarkdown(tx.intro || tx.descripcion || '[Descripción del proyecto]');
+  const zonas = Array.isArray(tx.items) ? tx.items.filter(it=>it && (it.titulo||it.texto)) : [];
+  const cierreTxt = stripMarkdown(tx.cierre || '');
 
   // ── PÁGINA 1 ──────────────────────────────────────────────
   doc.setFillColor(...CREAM);doc.rect(0,0,PW,TOP_H,'F');
@@ -1251,9 +1279,42 @@ async function pdfPresupuesto(){
   doc.text('Descripción del Proyecto', PMARGIN, subtitleY, {charSpace:charSpaceFor(T_SUBTITLE)});
 
   const bodyY0 = subtitleY+41;
-  setStyle(doc,{...T_BODY,color:[222,234,224]});
-  const descLines = doc.splitTextToSize(descripcion,PCW);
-  doc.text(descLines, PMARGIN, bodyY0, {charSpace:cs});
+  const bodyBottomLimit = (PH-FOOTER_IMG_H)-40; // nunca invadir el footer
+
+  // Medimos con dos niveles de espaciado (generoso / compacto) y elegimos el que entra.
+  // Esto evita que un texto un poco más largo de lo normal quede "cortado" contra el footer.
+  const CLARO = [222,234,224], CLARO2 = [205,222,210];
+  function medirTotal(paraGap, itemGap){
+    let h = measureParagraphHeight(doc, introTxt, PCW, T_BODY);
+    zonas.forEach(z=>{ h += itemGap + measureLabeledItemHeight(doc, z.titulo||'', z.texto||'', PCW); });
+    if(cierreTxt) h += paraGap + measureParagraphHeight(doc, cierreTxt, PCW, T_BODY);
+    if(zonas.length) h += paraGap; // aire entre intro y el primer bullet
+    return h;
+  }
+  const disponible = bodyBottomLimit - bodyY0;
+  let paraGap=28, itemGap=22;
+  if(medirTotal(paraGap,itemGap) > disponible){ paraGap=16; itemGap=12; }
+  if(medirTotal(paraGap,itemGap) > disponible){ paraGap=8;  itemGap=6;  }
+
+  let yBody = bodyY0;
+  setStyle(doc,{...T_BODY,color:CLARO});
+  const introLines = doc.splitTextToSize(introTxt,PCW);
+  doc.text(introLines, PMARGIN, yBody, {charSpace:cs});
+  yBody += introLines.length*BODY_LH;
+
+  if(zonas.length){
+    yBody += paraGap;
+    zonas.forEach(z=>{
+      yBody = drawLabeledItem(doc, z.titulo||'', z.texto||'', PMARGIN, yBody, PCW, {label:[255,255,255], text:CLARO}, itemGap);
+    });
+  }
+
+  if(cierreTxt){
+    yBody += paraGap - (zonas.length?itemGap:0); // el último ítem ya deja itemGap; ajustamos a paraGap antes del cierre
+    setStyle(doc,{...T_BODY,color:CLARO2});
+    const cierreLines = doc.splitTextToSize(cierreTxt,PCW);
+    doc.text(cierreLines, PMARGIN, yBody, {charSpace:cs});
+  }
 
   drawFooterCrema(doc);
 
@@ -1326,23 +1387,51 @@ async function pdfPresupuesto(){
   drawFooterVerde(doc);
 
   // ── PÁGINAS SIGUIENTES — IMÁGENES ILUSTRATIVAS (sin footer) ──
-  // 1 imagen por página con caja alta (no ancha): las verticales aprovechan casi
-  // todo el ancho disponible en vez de quedar con franjas laterales grandes.
+  // Criterio: cada foto se dibuja a todo el ancho disponible (PCW) y a SU altura
+  // natural (según su propio aspect ratio) — no se fuerza a una caja gigante ni se
+  // centra con espacio vacío. Si dos (o más) fotos horizontales entran una debajo
+  // de la otra en la misma página, se agrupan; si no entran, pasa a la siguiente.
+  // Las verticales, al ser altas por naturaleza, casi siempre ocupan su propia página.
   const fotos = pFotos.filter(f=>f.data);
   const IMG_AREA_TOP = PGREEN_HEAD_H+56;
   const IMG_BOTTOM_MARGIN = 70;
+  const CAPTION_IMG_GAP = 16;   // aire entre el texto y la imagen — chico, pegado, no centrado
+  const PHOTO_GAP = 48;         // aire entre una foto y la siguiente dentro de la misma página
+  const bottomLimit = PH - IMG_BOTTOM_MARGIN;
 
+  function measureCaptionHeight(foto){
+    if(foto.titulo) return measureLabeledItemHeight(doc, foto.titulo, foto.desc||'', PCW);
+    if(foto.desc) return measureParagraphHeight(doc, foto.desc, PCW, T_BODY);
+    return 0;
+  }
+
+  let cursorY = null;
   fotos.forEach(foto=>{
-    doc.addPage([PW,PH]);
-    drawGreenHeader(doc,'IMÁGENES ILUSTRATIVAS');
-    let iy = IMG_AREA_TOP;
-    if(foto.titulo){
-      iy = drawLabeledItem(doc, foto.titulo, foto.desc||'', PMARGIN, iy, PCW) + 4;
-    } else if(foto.desc){
-      iy = drawText(doc, foto.desc, PMARGIN, iy, PCW, T_BODY) + 14;
+    const hasCaption = !!(foto.titulo || foto.desc);
+    const capH = hasCaption ? measureCaptionHeight(foto)+CAPTION_IMG_GAP : 0;
+    const naturalPhotoH = PCW*((foto.h||3)/(foto.w||4));
+    const neededH = capH+naturalPhotoH;
+
+    if(cursorY===null || cursorY+neededH > bottomLimit){
+      doc.addPage([PW,PH]);
+      drawGreenHeader(doc,'IMÁGENES ILUSTRATIVAS');
+      cursorY = IMG_AREA_TOP;
+    } else {
+      cursorY += PHOTO_GAP;
     }
-    const boxMaxH = PH - iy - IMG_BOTTOM_MARGIN;
-    drawImageFit(doc, foto, PMARGIN, iy, PCW, boxMaxH);
+
+    if(hasCaption){
+      if(foto.titulo){
+        cursorY = drawLabeledItem(doc, foto.titulo, foto.desc||'', PMARGIN, cursorY, PCW, undefined, CAPTION_IMG_GAP);
+      } else {
+        cursorY = drawText(doc, foto.desc, PMARGIN, cursorY, PCW, T_BODY) + CAPTION_IMG_GAP;
+      }
+    }
+
+    const availableH = bottomLimit-cursorY;
+    const finalPhotoH = Math.min(naturalPhotoH, availableH);
+    drawImageFit(doc, foto, PMARGIN, cursorY, PCW, finalPhotoH);
+    cursorY += finalPhotoH;
   });
 
   const fn='Presupuesto_212_'+nombreRaw.replace(/\s+/g,'_')+'.pdf';
@@ -1355,12 +1444,18 @@ async function pdfPresupuesto(){
 }
 
 async function guardarPDFEnDrive(doc, filename){
-  if(!selectedLeadPresu || selectedLeadPresu._tipo!=='Embudo') return;
+  if(!selectedLeadPresu) return;
+  // Embudo Activo: el link va a la columna PDF PRESUP (L). Base Leads: se anexa a Observaciones
+  // sin borrar lo que ya había. Alianzas no tiene columna de PDF, no se sube.
+  const tipoBackend = selectedLeadPresu._tipo==='Embudo' ? 'embudo'
+                     : selectedLeadPresu._tipo==='Base Leads' ? 'leads'
+                     : null;
+  if(!tipoBackend) return;
   try{
     const datauri = doc.output('datauristring');
     const base64 = datauri.split(',')[1];
     await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'guardarPDF', empresa:selectedLeadPresu.empresa, base64, filename})});
+      body:JSON.stringify({action:'guardarPDF', tipo:tipoBackend, empresa:selectedLeadPresu.empresa, base64, filename})});
   }catch(e){}
 }
 
