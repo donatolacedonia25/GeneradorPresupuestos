@@ -396,30 +396,62 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
   </div>
   </div>
 
-    <div class="card">
+  <div id="draft-banner" class="info" style="display:none;border-left-color:#c0392b;background:#fdecea;color:#842029;cursor:pointer" onclick="recuperarDraft()">
+    📝 Hay un reporte sin enviar guardado en este dispositivo — tocá para recuperarlo.
+  </div>
+
+  <div class="card">
+    <h2>Cliente</h2>
+    <select id="r-select" onchange="onSeleccionarClienteMantenimiento()">
+      <option value="">— Cargando clientes... —</option>
+    </select>
+    <div id="r-ultima-visita-info" style="display:none;margin-top:10px;padding:8px 12px;background:#f0f9f0;border-radius:5px;font-size:12px;color:#2D6A4F"></div>
+  </div>
+
+  <div class="card">
     <h2>Datos de la visita</h2>
     <div class="form-grid">
-      <div><label>Nombre / empresa</label><input id="r-nom" placeholder="Shell — Dos sucursales"></div>
-      <div><label>Contacto</label><input id="r-cont" placeholder="Andrea (223 XXX-XXXX)"></div>
-      <div><label>Fecha de visita</label><input type="date" id="r-fecha" value="2026-06-25"></div>
-      <div><label>Ubicación</label><input id="r-ubic" placeholder="Constitución y La Costa / Ruta 88"></div>
+      <div><label>Nombre / empresa</label><input id="r-nom" placeholder="Se autocompleta al elegir el cliente" readonly></div>
+      <input type="hidden" id="r-cont">
+      <div><label>Responsable de la visita</label>
+        <select id="r-resp">
+          <option value="Agustín" selected>Agustín</option>
+          <option value="Donato">Donato</option>
+          <option value="Colaborador">Colaborador</option>
+        </select>
+      </div>
+      <div><label>Fecha de visita</label><input type="date" id="r-fecha"></div>
+      <div><label>Ubicación</label><input id="r-ubic" placeholder="Se autocompleta al elegir el cliente"></div>
     </div>
   </div>
+
   <div class="card">
-    <h2>Trabajos realizados (para la IA)</h2>
-    <div class="form-grid">
-      <div class="full"><label>Tareas de rutina</label><textarea id="r-rut" placeholder="Control hídrico&#10;Poda de limpieza"></textarea></div>
-      <div class="full"><label>Trabajos específicos por sucursal / sector</label><textarea id="r-esp" placeholder="Shell Don Félix: reubicación Strelitzia con hoja quemada.&#10;Shell El Peñón: limpieza follaje 100%."></textarea></div>
-      <div class="full"><label>Novedades o alertas (opcional)</label><textarea id="r-nov" style="min-height:52px" placeholder="Maceta rota en cafetería Don Félix."></textarea></div>
-    </div>
+    <h2>Tareas de rutina</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:10px">Tildá lo que se hizo. El texto ya está redactado y pasa directo al PDF.</p>
+    <div id="bloque-a-list"></div>
   </div>
+
+  <div class="card">
+    <h2>Intervenciones específicas</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:10px">Tildá y agregá un dato breve (dónde / qué especie). La IA arma la frase final.</p>
+    <div id="bloque-b-list"></div>
+  </div>
+
+  <div class="card">
+    <h2>Alertas y detecciones</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:10px">Impactan al cierre del reporte — es el puente para nuevos trabajos o para blindarnos ante problemas.</p>
+    <div id="bloque-c-list"></div>
+  </div>
+
   <div class="card">
     <h2>Fotos con epígrafes</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">Las fotos se comprimen automáticamente antes de subirse (más rápido con datos móviles).</p>
     <div class="fotos-grid" id="r-fotos-grid"></div>
     <button class="add-btn" style="margin-top:16px" onclick="addFotoR()">+ Agregar foto</button>
   </div>
   <div class="status" id="r-st"></div>
-  <button class="btn" id="r-btn" onclick="runReporte()">✦ Generar Reporte PDF</button>
+  <button class="btn" id="r-btn" onclick="runReporte()">✦ Generar y Guardar Reporte</button>
+  <button class="btn" id="r-wpp-btn" style="display:none;background:#25D366" onclick="compartirReportePorWhatsapp()">📱 Compartir por WhatsApp</button>
 </div>
 </div>
 
@@ -905,6 +937,129 @@ function renderFotos(){
 }
 
 // ── Fotos reporte ────────────────────────────────────────────
+// ── Definición de los 3 bloques del reporte de mantenimiento ──
+const BLOQUE_A = [
+  {id:'a1', label:'Gestión Hídrica y Monitoreo', texto:'Evaluación del nivel de humedad en sustrato y ajuste de hidratación manual para prevenir estrés hídrico.'},
+  {id:'a2', label:'Poda Sanitaria y Despeje', texto:'Remoción técnica de tejido vegetal deteriorado para mitigar focos infecciosos y optimizar el desarrollo del follaje sano.'},
+  {id:'a3', label:'Acondicionamiento Foliar', texto:'Limpieza profunda de hojas y pulverización para maximizar la captación de luz y la eficiencia fotosintética en interiores.'},
+  {id:'a4', label:'Control Fitosanitario Preventivo', texto:'Chequeo visual de plagas y enfermedades. Ante cualquier detección, se procede con la alerta correspondiente y el cuidado específico.'}
+];
+const BLOQUE_B = [
+  {id:'b1', label:'Consolidación de trasplantes', ph:'ej. Potus en recepción'},
+  {id:'b2', label:'Rotación estratégica de ejemplares', ph:'ej. Ficus para buscar luz natural'},
+  {id:'b3', label:'Perfilado y control de volumen', ph:'ej. Macetas de pasillo principal'},
+  {id:'b4', label:'Renovación de sustrato superficial', ph:'ej. Sansevierias'},
+  {id:'b5', label:'Aplicación de nutrición preventiva', ph:'ej. Refuerzo pre-temporada'},
+  {id:'b6', label:'Aprovechamiento de reproducción natural', ph:'ej. Monsteras para vestir sector nuevo'},
+  {id:'b7', label:'Otro', custom:true}
+];
+const BLOQUE_C = [
+  {id:'c1', label:'Detección temprana de plaga/hongo', ph:'Indicar sector'},
+  {id:'c2', label:'Falla en infraestructura/maceta deteriorada', ph:'Indicar cuál'},
+  {id:'c3', label:'Ejemplar con estrés agudo irrecuperable', ph:'Sugerir reposición'},
+  {id:'c4', label:'Oportunidad de expansión detectada', ph:'ej. sector sin vegetación, alto tránsito'}
+];
+
+function renderBloqueA(){
+  const cont=document.getElementById('bloque-a-list');cont.innerHTML='';
+  BLOQUE_A.forEach(it=>{
+    const row=document.createElement('label');
+    row.style.cssText='display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;font-size:13px;cursor:pointer';
+    row.innerHTML=`<input type="checkbox" id="${it.id}" style="margin-top:3px" onchange="saveDraftDebounced()"><span><b>${esc(it.label)}</b><br><span style="color:#777;font-size:12px">${esc(it.texto)}</span></span>`;
+    cont.appendChild(row);
+  });
+}
+
+function renderBloqueB(){
+  const cont=document.getElementById('bloque-b-list');cont.innerHTML='';
+  BLOQUE_B.forEach(it=>{
+    const wrap=document.createElement('div');wrap.style.marginBottom='12px';
+    if(it.custom){
+      wrap.innerHTML=`
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="${it.id}" onchange="toggleCampo('${it.id}');saveDraftDebounced()"><b>${esc(it.label)}</b>
+        </label>
+        <div id="${it.id}-campo" style="display:none;margin:6px 0 0 26px">
+          <input id="${it.id}-titulo" placeholder="Título de la intervención" style="margin-bottom:6px" oninput="saveDraftDebounced()">
+          <input id="${it.id}-dato" placeholder="Descripción breve" oninput="saveDraftDebounced()">
+        </div>`;
+    }else{
+      wrap.innerHTML=`
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="${it.id}" onchange="toggleCampo('${it.id}');saveDraftDebounced()"><b>${esc(it.label)}</b>
+        </label>
+        <div id="${it.id}-campo" style="display:none;margin:6px 0 0 26px">
+          <input id="${it.id}-dato" placeholder="${esc(it.ph)}" oninput="saveDraftDebounced()">
+        </div>`;
+    }
+    cont.appendChild(wrap);
+  });
+}
+
+function renderBloqueC(){
+  const cont=document.getElementById('bloque-c-list');cont.innerHTML='';
+  BLOQUE_C.forEach(it=>{
+    const wrap=document.createElement('div');wrap.style.marginBottom='12px';
+    wrap.innerHTML=`
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="${it.id}" onchange="toggleCampo('${it.id}');saveDraftDebounced()"><b>${esc(it.label)}</b>
+      </label>
+      <div id="${it.id}-campo" style="display:none;margin:6px 0 0 26px">
+        <input id="${it.id}-dato" placeholder="${esc(it.ph)}" oninput="saveDraftDebounced()">
+      </div>`;
+    cont.appendChild(wrap);
+  });
+}
+
+function toggleCampo(id){
+  const chk=document.getElementById(id);
+  const campo=document.getElementById(id+'-campo');
+  campo.style.display = chk.checked ? 'block' : 'none';
+}
+
+// Junta los checks tildados de un bloque en [{titulo,dato}], salteando "Otro" sin completar
+function recopilarBloque(items){
+  const out=[];
+  items.forEach(it=>{
+    const chk=document.getElementById(it.id);
+    if(!chk || !chk.checked) return;
+    if(it.custom){
+      const titulo=(g(it.id+'-titulo')||'').trim();
+      const dato=(g(it.id+'-dato')||'').trim();
+      if(titulo) out.push({titulo, dato});
+    }else{
+      const dato=(g(it.id+'-dato')||'').trim();
+      out.push({titulo:it.label, dato});
+    }
+  });
+  return out;
+}
+
+function recopilarTareasRutinaFijas(){
+  return BLOQUE_A.filter(it=>{const c=document.getElementById(it.id);return c && c.checked;}).map(it=>it.texto);
+}
+
+// ── Fotos con compresión automática (canvas, máx 1000px, calidad 0.6) ─
+function compressImageFile(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const maxDim=1000;let w=img.naturalWidth,h=img.naturalHeight;
+        if(w>maxDim||h>maxDim){ if(w>=h){h=Math.round(h*(maxDim/w));w=maxDim;} else {w=Math.round(w*(maxDim/h));h=maxDim;} }
+        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve({dataUrl:canvas.toDataURL('image/jpeg',0.6),w,h});
+      };
+      img.onerror=()=>reject(new Error('No se pudo leer la imagen'));
+      img.src=e.target.result;
+    };
+    reader.onerror=()=>reject(new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function addFotoR(){rFotos.push({data:null,cap:'',w:0,h:0});renderFotosR();}
 function renderFotosR(){
   const grid=document.getElementById('r-fotos-grid');grid.innerHTML='';
@@ -913,16 +1068,141 @@ function renderFotosR(){
     card.innerHTML=`
       <div class="foto-slot${f.data?' loaded':''}">
         ${f.data?`<img src="${f.data}">`:''}
-        <button class="del" onclick="rFotos[${i}].data=null;renderFotosR()">×</button>
+        <button class="del" onclick="rFotos[${i}].data=null;renderFotosR();saveDraftDebounced()">×</button>
         <div class="ph"><svg width="28" height="28" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>Subir foto</span></div>
-        <input type="file" accept="image/*" onchange="loadImg(event,rFotos,${i},renderFotosR)">
+        <input type="file" accept="image/*" onchange="handleFotoRUpload(event,${i})">
       </div>
       <div class="foto-fields">
-        <div><label>Epígrafe</label><input value="${esc(f.cap)}" placeholder="Descripción de la foto..." oninput="rFotos[${i}].cap=this.value"></div>
-        <button class="rm-btn" style="align-self:flex-end;font-size:12px;color:#e05252;margin-top:4px" onclick="rFotos.splice(${i},1);renderFotosR()">Eliminar</button>
+        <div><label>Epígrafe</label><input value="${esc(f.cap)}" placeholder="Descripción de la foto..." oninput="rFotos[${i}].cap=this.value;saveDraftDebounced()"></div>
+        <button class="rm-btn" style="align-self:flex-end;font-size:12px;color:#e05252;margin-top:4px" onclick="rFotos.splice(${i},1);renderFotosR();saveDraftDebounced()">Eliminar</button>
       </div>`;
     grid.appendChild(card);
   });
+}
+
+async function handleFotoRUpload(event, idx){
+  const file=event.target.files[0];if(!file) return;
+  try{
+    const {dataUrl,w,h}=await compressImageFile(file);
+    rFotos[idx].data=dataUrl;rFotos[idx].w=w;rFotos[idx].h=h;
+    renderFotosR();saveDraftDebounced();
+  }catch(e){alert('No se pudo procesar la imagen: '+e.message);}
+}
+
+// ── Selector de clientes (desde Cl. Mantenimiento) ───────────
+let CLIENTES_MANTENIMIENTO=[];
+let ultimoReporteURL=null;
+const DRAFT_PREFIX='p212_draft_reporte_';
+let draftSaveTimer=null;
+
+async function cargarClientesMantenimiento(){
+  const sel=document.getElementById('r-select');
+  try{
+    const res=await fetch(WEBHOOK_URL+'?action=leerClientesMantenimiento');
+    const data=await res.json();
+    if(!data.ok) throw new Error(data.msg||'Error al leer clientes');
+    CLIENTES_MANTENIMIENTO=data.clientes||[];
+    sel.innerHTML='<option value="">— Elegí un cliente —</option>'+
+      CLIENTES_MANTENIMIENTO.map((c,i)=>`<option value="${i}">${esc(c.empresa)}</option>`).join('');
+  }catch(e){ sel.innerHTML='<option value="">No se pudo cargar (revisá conexión)</option>'; }
+}
+
+async function onSeleccionarClienteMantenimiento(){
+  const idx=document.getElementById('r-select').value;
+  if(idx===''){ return; }
+  const c=CLIENTES_MANTENIMIENTO[idx];
+  document.getElementById('r-nom').value=c.empresa;
+  document.getElementById('r-cont').value=c.contacto||'';
+  document.getElementById('r-ubic').value=c.direccion||'';
+  if(!document.getElementById('r-fecha').value){
+    document.getElementById('r-fecha').value=new Date().toISOString().slice(0,10);
+  }
+  const draft=cargarDraft(c.empresa);
+  document.getElementById('draft-banner').style.display=draft?'block':'none';
+
+  const infoEl=document.getElementById('r-ultima-visita-info');
+  infoEl.style.display='none';
+  try{
+    const res=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'ultimoReporteCliente',empresa:c.empresa})});
+    const data=await res.json();
+    if(data.ok && data.reporte){
+      infoEl.style.display='block';
+      infoEl.textContent=`Última visita registrada: ${data.reporte.fechaVisita||c.ultimaVisita||'sin dato'}.`;
+    }else if(c.ultimaVisita){
+      infoEl.style.display='block';
+      infoEl.textContent=`Última visita registrada: ${c.ultimaVisita}.`;
+    }
+  }catch(e){}
+}
+
+// ── Draft local (autoguardado + recuperación sin conexión) ───
+function draftKey(empresa){return DRAFT_PREFIX+(empresa||'sin_cliente').replace(/\s+/g,'_');}
+
+function recopilarDatosReporte(){
+  return {
+    empresa:g('r-nom'), contacto:g('r-cont'), fecha:g('r-fecha'), ubicacion:g('r-ubic'), responsable:g('r-resp'),
+    bloqueA: BLOQUE_A.map(it=>{const c=document.getElementById(it.id);return c?c.checked:false;}),
+    bloqueB: BLOQUE_B.map(it=>{
+      const c=document.getElementById(it.id);
+      return {checked:c?c.checked:false, titulo: it.custom?g(it.id+'-titulo'):'', dato:g(it.id+'-dato')};
+    }),
+    bloqueC: BLOQUE_C.map(it=>{const c=document.getElementById(it.id);return {checked:c?c.checked:false, dato:g(it.id+'-dato')};}),
+    fotos: rFotos,
+    guardadoEn: new Date().toISOString()
+  };
+}
+
+function saveDraftDebounced(){
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer=setTimeout(()=>{
+    const empresa=g('r-nom');if(!empresa) return;
+    try{ localStorage.setItem(draftKey(empresa), JSON.stringify(recopilarDatosReporte())); }catch(e){}
+  },2000);
+}
+
+function cargarDraft(empresa){
+  try{ const raw=localStorage.getItem(draftKey(empresa)); return raw?JSON.parse(raw):null; }catch(e){ return null; }
+}
+function borrarDraft(empresa){ try{ localStorage.removeItem(draftKey(empresa)); }catch(e){} }
+
+function recuperarDraft(){
+  const empresa=g('r-nom');
+  const draft=cargarDraft(empresa);
+  if(!draft) return;
+  document.getElementById('r-cont').value=draft.contacto||'';
+  document.getElementById('r-fecha').value=draft.fecha||'';
+  document.getElementById('r-ubic').value=draft.ubicacion||'';
+  document.getElementById('r-resp').value=draft.responsable||'Agustín';
+  (draft.bloqueA||[]).forEach((checked,i)=>{ const it=BLOQUE_A[i]; if(it){const c=document.getElementById(it.id); if(c) c.checked=checked;} });
+  (draft.bloqueB||[]).forEach((d,i)=>{
+    const it=BLOQUE_B[i]; if(!it) return;
+    const c=document.getElementById(it.id); if(!c) return;
+    c.checked=d.checked; toggleCampo(it.id);
+    if(it.custom) document.getElementById(it.id+'-titulo').value=d.titulo||'';
+    document.getElementById(it.id+'-dato').value=d.dato||'';
+  });
+  (draft.bloqueC||[]).forEach((d,i)=>{
+    const it=BLOQUE_C[i]; if(!it) return;
+    const c=document.getElementById(it.id); if(!c) return;
+    c.checked=d.checked; toggleCampo(it.id);
+    document.getElementById(it.id+'-dato').value=d.dato||'';
+  });
+  rFotos=draft.fotos||[];
+  renderFotosR();
+  document.getElementById('draft-banner').style.display='none';
+  document.getElementById('r-st').className='status on';
+  document.getElementById('r-st').textContent='✓ Borrador recuperado — revisá y volvé a generar el reporte.';
+}
+
+// ── Compartir por WhatsApp ────────────────────────────────────
+function compartirReportePorWhatsapp(){
+  if(!ultimoReporteURL){ alert('Todavía no hay un reporte guardado para compartir.'); return; }
+  const cliente=g('r-nom');
+  const texto=`Hola, te comparto el reporte de mantenimiento de ${cliente} del ${fechaES(g('r-fecha'))}:\n${ultimoReporteURL}`;
+  const contacto=(g('r-cont')||'').replace(/[^\d]/g,'');
+  const url=contacto ? `https://wa.me/${contacto}?text=${encodeURIComponent(texto)}` : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  window.open(url,'_blank');
 }
 
 function loadImg(event,arr,idx,renderFn){
@@ -988,22 +1268,71 @@ async function guardarNotasInternas(){
 }
 
 async function runReporte(){
-  const btn=document.getElementById('r-btn'),st=document.getElementById('r-st');
-  btn.disabled=true;btn.textContent='Generando...';
-  st.className='status on';st.textContent='✦ La IA está redactando...';
+  const btn=document.getElementById('r-btn'), st=document.getElementById('r-st'), wppBtn=document.getElementById('r-wpp-btn');
+  wppBtn.style.display='none';
+
+  if(!g('r-nom')){ st.className='status on err'; st.textContent='Elegí un cliente antes de generar el reporte.'; return; }
+
+  const bloqueB=recopilarBloque(BLOQUE_B);
+  const bloqueC=recopilarBloque(BLOQUE_C);
+  const tareasRutinaFijas=recopilarTareasRutinaFijas();
+
+  btn.disabled=true; btn.textContent='Generando...';
+  st.className='status on'; st.textContent='✦ La IA está redactando...';
+
+  let doc, pdfFilename, textoIA;
   try{
     const res=await fetch('/api/generar',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({tipo:'reporte',datos:{
         nombreCliente:g('r-nom'),fechaVisita:fechaES(g('r-fecha')),ubicacion:g('r-ubic'),
-        tareasRutina:g('r-rut'),trabajosEspecificos:g('r-esp'),novedades:g('r-nov')
+        trabajosEspecificos: bloqueB.map(x=>`${x.titulo}: ${x.dato}`).join('\n'),
+        novedades: bloqueC.map(x=>`${x.titulo}: ${x.dato}`).join('\n')
       }})});
     const d=await res.json();
-    if(!d.ok) throw new Error(d.error||'Error');
+    if(!d.ok) throw new Error(d.error||'Error al redactar el reporte');
     TX.reporte=d.contenido;
+    TX.reporte.tareasRutinaFijas = tareasRutinaFijas;
+    textoIA = JSON.stringify(d.contenido);
     st.textContent='✓ Texto listo. Armando PDF...';
-    await pdfReporte();
-  }catch(e){st.className='status on err';st.textContent='Error: '+e.message;}
-  finally{btn.disabled=false;btn.textContent='✦ Generar Reporte PDF';}
+
+    doc = await pdfReporte(); // pdfReporte() devuelve el doc para poder subirlo a Drive
+    pdfFilename = 'Reporte_212_'+g('r-nom').replace(/\s+/g,'_')+'_'+g('r-fecha')+'.pdf';
+  }catch(e){
+    btn.disabled=false; btn.textContent='✦ Generar y Guardar Reporte';
+    st.className='status on err'; st.textContent='Error al generar el PDF: '+e.message;
+    saveDraftDebounced();
+    return;
+  }
+
+  st.textContent='☁️ Subiendo a Drive y guardando en el CRM...';
+  try{
+    const base64=doc.output('datauristring').split(',')[1];
+    const payload={
+      action:'guardarReporteMantenimiento',
+      empresa: g('r-nom'),
+      fechaVisita: fechaES(g('r-fecha')),
+      responsable: g('r-resp'),
+      tareasRutina: tareasRutinaFijas.join(' | '),
+      trabajosEspecificos: bloqueB.map(x=>`${x.titulo}: ${x.dato}`).join(' | '),
+      alertas: bloqueC.map(x=>`${x.titulo}: ${x.dato}`).join(' | '),
+      textoIA, base64, filename: pdfFilename
+    };
+    const res2=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+    const d2=await res2.json();
+    if(!d2.ok) throw new Error(d2.msg||'Error al guardar en el CRM');
+
+    ultimoReporteURL=d2.url;
+    borrarDraft(g('r-nom'));
+    st.className='status on';
+    st.textContent='✓ Reporte guardado — PDF descargado y subido a Drive.';
+    wppBtn.style.display='block';
+  }catch(e){
+    saveDraftDebounced();
+    st.className='status on err';
+    st.textContent='⚠️ El PDF se descargó, pero no se pudo subir al CRM ('+e.message+'). Guardado localmente — tocá "Generar" de nuevo cuando tengas señal.';
+  }finally{
+    btn.disabled=false; btn.textContent='✦ Generar y Guardar Reporte';
+  }
 }
 
 // ── MANTENIMIENTO ──────────────────────────────────────────────
@@ -1579,9 +1908,24 @@ async function pdfReporte(){
       y+=8;
     });
   };
-  banda('TAREAS DE RUTINA');rItems(tx.tareasRutinaTexto,g('r-rut'));
-  y+=2;banda('TRABAJOS ESPECÍFICOS');rItems(tx.trabajosEspecificosTexto,g('r-esp'));
-  if(tx.notaFinal){y+=4;doc.setFillColor(255,248,230);doc.setDrawColor(200,150,50);doc.roundedRect(MM,y,cW,13,2,2,'FD');doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(140,90,20);doc.text('Novedad detectada: ',MM+4,y+8);const nw=doc.getTextWidth('Novedad detectada: ');doc.setFont('helvetica','normal');doc.text(doc.splitTextToSize(tx.notaFinal,cW-nw-8)[0],MM+4+nw,y+8);y+=17;}
+  const tareasFijas=(tx.tareasRutinaFijas||[]).join('|||');
+  if(tareasFijas){banda('TAREAS DE RUTINA');rItems(tareasFijas,'');}
+  if(tx.trabajosEspecificosTexto){y+=2;banda('TRABAJOS ESPECÍFICOS');rItems(tx.trabajosEspecificosTexto,'');}
+  if(tx.alertasTexto){
+    const alertas=tx.alertasTexto.split('|||').map(s=>s.trim()).filter(Boolean);
+    alertas.forEach(alerta=>{
+      y+=4;
+      const lines=doc.splitTextToSize(alerta,cW-8);
+      const boxH=Math.max(13,lines.length*5+7);
+      doc.setFillColor(255,248,230);doc.setDrawColor(200,150,50);doc.roundedRect(MM,y,cW,boxH,2,2,'FD');
+      doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(140,90,20);doc.text('Alerta: ',MM+4,y+8);
+      const nw=doc.getTextWidth('Alerta: ');
+      doc.setFont('helvetica','normal');
+      doc.text(lines[0]||'',MM+4+nw,y+8);
+      for(let i=1;i<lines.length;i++){doc.text(lines[i],MM+4,y+8+i*5);}
+      y+=boxH+4;
+    });
+  }
   footer(doc,W,H);
   const fotosR=rFotos.filter(f=>f.data);
   if(fotosR.length>0){
@@ -1607,11 +1951,12 @@ async function pdfReporte(){
   }
   const fn='Reporte_212_'+nombre.replace(/\s+/g,'_')+'.pdf';
   doc.save(fn);
-  document.getElementById('r-st').className='status on';
-  document.getElementById('r-st').textContent='✓ PDF descargado: '+fn;
+  return doc;
 }
 
 // Init
+renderBloqueA();renderBloqueB();renderBloqueC();
+cargarClientesMantenimiento();
 addItem();addItem();addItem();
 addFoto();addFoto();
 addFotoR();addFotoR();
