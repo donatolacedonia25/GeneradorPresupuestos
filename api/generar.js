@@ -157,22 +157,34 @@ ONLY JSON. START WITH {`
           role: 'user',
           content: `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
 RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
-Format: {"intro":"text","tareasRutinaTexto":"Task 1: desc|||Task 2: desc","trabajosEspecificosTexto":"Sector: work|||Sector: work","notaFinal":"text or empty string"}
+Format: {"intro":"text","trabajosEspecificosTexto":"Título: frase|||Título: frase","alertasTexto":"Título: frase|||Título: frase or empty string"}
 
 Write in Spanish. Use this data:
 - Cliente: ${datos.nombreCliente || ''}
 - Fecha: ${datos.fechaVisita || ''}
 - Ubicación: ${datos.ubicacion || ''}
-- Tareas de rutina: ${datos.tareasRutina || ''}
-- Trabajos específicos: ${datos.trabajosEspecificos || ''}
-- Novedades: ${datos.novedades || ''}
+- Intervenciones específicas realizadas (formato "Título: dato breve que anotó el operario"), una por línea:
+${datos.trabajosEspecificos || '(ninguna)'}
+- Alertas o detecciones (formato "Título: dato breve que anotó el operario"), una por línea:
+${datos.novedades || '(ninguna)'}
 
-Style: professional but close. Short paragraphs. Separate items with |||
+Task for "trabajosEspecificosTexto": for each line in "Intervenciones específicas", write ONE short executive sentence that naturally combines the título and the dato into a finished phrase, same order, separated by |||. If there are no lines, use empty string "".
+Task for "alertasTexto": for each line in "Alertas o detecciones", write ONE short sentence. If the título is "Oportunidad de expansión detectada", phrase it as a commercial opportunity (a possible new job), not as a problem. The rest (plaga/hongo, falla en infraestructura, estrés agudo) should be phrased as a protective/informative alert, calm and factual, no alarmism. Same order, separated by |||. If there are no lines, use empty string "".
+
+Style rules (apply to intro, trabajosEspecificosTexto and alertasTexto):
+- Tone: professional but close ("cercano"), moderate — no excesos técnicos, no exagerar en extensión.
+- Each item in trabajosEspecificosTexto/alertasTexto: one sentence, roughly 12-25 words. Do not repeat the título verbatim as a label — weave it into the sentence.
+- "intro": one short paragraph (2-3 sentences) summarizing the visit in general terms.
+- PLAIN TEXT ONLY. Never use markdown: no **bold**, no *italics*, no # headers, no bullet symbols.
+
 ONLY JSON. START WITH {`
         }]
       });
 
       const contenido = parseJSON(extractText(r));
+      contenido.intro = stripMarkdown(contenido.intro);
+      contenido.trabajosEspecificosTexto = stripMarkdown(contenido.trabajosEspecificosTexto);
+      contenido.alertasTexto = stripMarkdown(contenido.alertasTexto);
       return res.status(200).json({ ok: true, contenido });
 
     } catch(e) {
