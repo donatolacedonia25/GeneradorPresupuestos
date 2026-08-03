@@ -115,32 +115,71 @@ ONLY JSON. START WITH {`
     try {
       const r = await claudeRequest(apiKey, {
         model: 'claude-sonnet-4-6',
-        max_tokens: 700,
+        max_tokens: 900,
         messages: [{
           role: 'user',
           content: `You are a JSON API for 212 Paisajismo, a landscaping company in Mar del Plata, Argentina.
 RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
-Format: {"descripcion":"text"}
+Format: {"intro":"text","items":[{"titulo":"Zona o tarea","texto":"text"}],"cierre":"text"}
 
 Write in Spanish. Use this data as raw context (may be long, unordered, informal):
-- Ubicación: ${datos.ubicacion || ''}
 - Etapa / título del proyecto: ${datos.etapaProyecto || ''}
 - Contexto completo (tipo de espacio, objetivo, propuesta técnica, especies, etapa, lo que aporte el usuario): ${datos.contexto || ''}
+(Ubicación y nombre del cliente ya aparecen en otra parte del documento: NUNCA los repitas ni los menciones en el texto.)
 
-Style rules for "descripcion":
-- ONE single persuasive paragraph (or a short paragraph plus a brief bulleted breakdown by sector if the context describes multiple distinct sectors/zones — mirror the tone of a landscaping proposal, not a marketing pitch).
-- Start with something like "Tras el relevamiento del espacio..." or "Tras la visita..." + concrete context.
-- Cover: what was found, the objective, the technical proposal (species, techniques), and close with what the service includes (provisión, preparación del espacio, colocación final).
-- Tone: professional and close, no marketing language, no generic AI phrasing.
-- PLAIN TEXT ONLY. Never use markdown formatting: no **bold**, no *italics*, no # headers, no "-" or "*" bullet lists. Write it as flowing prose a human would type directly into a document, with no formatting symbols at all.
-- HARD LIMIT: máximo 160 palabras en total. Si el contexto es extenso, resumí y priorizá lo esencial — nunca superes 160 palabras.
+This is a structured proposal document, not a single wall of text. Break the content into three clearly separate parts:
+
+1. "intro": ONE short paragraph (2-4 sentences) that opens with a variation of "Tras acercarnos y realizar la visita al espacio..." or "Tras la visita al espacio..." (never naming the address or the project title again) and states what was found and the general objective of the project. Do not go into technical detail here — that goes in "items" or "cierre".
+
+2. "items": an array used ONLY when the context clearly describes multiple distinct sectors, zones, or separate tasks (e.g. "sector de pileta", "frente de la casa", "trasplantes", "cerco vivo"). Each entry = {"titulo": short 2-4 word label for that zone/task, "texto": 1-3 sentences describing the technical proposal for that zone specifically — species, techniques, materials}. If the context describes a single unified space with no clearly separate zones, return items as an empty array [] and instead put all technical detail (species, techniques) inside "cierre".
+
+3. "cierre": ONE short closing paragraph. If "items" was used, this paragraph should NOT repeat the species/technique detail already given per zone — it should summarize logistics/execution (what the service includes: provisión, preparación del espacio, colocación final) in general terms. If "items" was empty, this paragraph carries the technical proposal (species, techniques) AND closes with what the service includes.
+
+Style rules (apply to intro, items[].texto and cierre):
+- Tone: professional and close ("cercano"), like a landscaping proposal — never marketing language, never generic AI phrasing.
+- Each paragraph must read like something a person typed directly, with clear sentence breaks — never one long unbroken sentence.
+- PLAIN TEXT ONLY. Never use markdown formatting: no **bold**, no *italics*, no # headers, no "-" or "*" bullet lists, no colons used as list markers.
+- HARD LIMIT: entre los tres campos combinados ("intro" + todos los "items" + "cierre"), nunca superes 170 palabras en total. Resumí y priorizá lo esencial.
 
 ONLY JSON. START WITH {`
         }]
       });
 
       const contenido = parseJSON(extractText(r));
-      contenido.descripcion = limitWords(stripMarkdown(contenido.descripcion), 160);
+      contenido.intro = stripMarkdown(contenido.intro || '');
+      contenido.cierre = stripMarkdown(contenido.cierre || '');
+      contenido.items = Array.isArray(contenido.items)
+        ? contenido.items
+            .filter(it => it && (it.titulo || it.texto))
+            .map(it => ({ titulo: stripMarkdown(it.titulo || ''), texto: stripMarkdown(it.texto || '') }))
+        : [];
+
+      // Red de seguridad de longitud total (intro + items + cierre) a 170 palabras,
+      // recortando primero el cierre, luego los items, y por último la intro.
+      const totalPalabras = () =>
+        countWords(contenido.intro) +
+        contenido.items.reduce((s, it) => s + countWords(it.texto), 0) +
+        countWords(contenido.cierre);
+      function countWords(s){ return s ? s.trim().split(/\s+/).filter(Boolean).length : 0; }
+      let sobra = totalPalabras() - 170;
+      if (sobra > 0) {
+        const recortarDesde = contenido.cierre;
+        contenido.cierre = limitWords(contenido.cierre, Math.max(0, countWords(contenido.cierre) - sobra));
+        sobra = totalPalabras() - 170;
+      }
+      if (sobra > 0 && contenido.items.length) {
+        contenido.items = contenido.items.map(it => {
+          if (sobra <= 0) return it;
+          const nuevoLen = Math.max(0, countWords(it.texto) - sobra);
+          const recortado = limitWords(it.texto, nuevoLen);
+          sobra -= (countWords(it.texto) - countWords(recortado));
+          return { ...it, texto: recortado };
+        });
+      }
+      if (sobra > 0) {
+        contenido.intro = limitWords(contenido.intro, Math.max(0, countWords(contenido.intro) - sobra));
+      }
+
       return res.status(200).json({ ok: true, contenido });
 
     } catch(e) {
