@@ -312,7 +312,6 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
       <input type="number" id="p-dias" value="1" min="1" oninput="updatePlazoTexto()">
     </div>
     <div id="p-conds">
-      <div class="cond-item"><input class="tit" value="Alcance del servicio"><input value="El presupuesto incluye la mano de obra, logística de traslado y la preparación técnica del terreno (sumado a la provisión botánica detallada en la propuesta)."><button class="rm-btn" onclick="this.parentElement.remove()">×</button></div>
       <div class="cond-item"><input class="tit" value="Plazo de ejecución"><input id="cond-plazo-input" value="El proyecto está planificado para resolverse en una (1) jornada de trabajo previamente coordinada, garantizando un resultado inmediato y evitando alteraciones en la dinámica del lugar."><button class="rm-btn" onclick="this.parentElement.remove()">×</button></div>
       <div class="cond-item"><input class="tit" value="Reserva"><input value="Para congelar los valores y agendar la fecha de ejecución, requerimos una seña del 50%. El saldo restante se completa al finalizar el proyecto."><button class="rm-btn" onclick="this.parentElement.remove()">×</button></div>
       <div class="cond-item"><input class="tit" value="Medios de pago"><input value="Efectivo o transferencia bancaria (aplica descuento del 20%), y 3 cuotas sin interés con los principales bancos."><button class="rm-btn" onclick="this.parentElement.remove()">×</button></div>
@@ -1504,6 +1503,30 @@ function drawText(doc, text, x, y, maxWidth, style, align){
   return y + lines.length*lineH;
 }
 
+// Envuelve texto con "sangría colgante": la 1ª línea puede ser más angosta (por el label
+// que la precede) pero las líneas siguientes usan TODO el ancho disponible hasta el margen
+// real — antes se envolvían todas con el ancho angosto de la 1ª línea, así que cada línea
+// cortaba mucho antes del borde ("escribía al aire"), aunque se dibujaran pegadas al margen.
+function wrapHangingIndent(doc, text, firstLineWidth, restWidth, charSpace){
+  const words = (text||'').trim().split(/\s+/).filter(Boolean);
+  const lines = [];
+  if(!words.length) return lines;
+  const widthOf = s => doc.getTextWidth(s) + charSpace*s.length;
+  let cur = '', limit = firstLineWidth;
+  for(const w of words){
+    const test = cur ? cur+' '+w : w;
+    if(!cur || widthOf(test) <= limit){
+      cur = test;
+    } else {
+      lines.push(cur);
+      cur = w;
+      limit = restWidth;
+    }
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+
 // Ítem de lista con etiqueta en negrita seguida de texto regular, ambos en tipografía body.
 // colors: {label, text} — permite variante clara (sobre fondo verde) u oscura (sobre fondo blanco).
 function drawLabeledItem(doc, label, text, x, y, maxWidth, colors, gapAfter){
@@ -1517,7 +1540,7 @@ function drawLabeledItem(doc, label, text, x, y, maxWidth, colors, gapAfter){
   doc.text(labelPart, x, y, {charSpace});
   const labelWidth = doc.getTextWidth(labelPart) + charSpace*labelPart.length;
   doc.setFont(FONT_MAP.regular,'normal');doc.setTextColor(...colors.text);
-  const lines = doc.splitTextToSize(text||'', maxWidth-labelWidth);
+  const lines = wrapHangingIndent(doc, text, maxWidth-labelWidth, maxWidth, charSpace);
   const lineH = bodySize*PX_PER_PT*lh;
   doc.text(lines[0]||'', x+labelWidth, y, {charSpace});
   let cy=y;
@@ -1540,7 +1563,8 @@ function measureLabeledItemHeight(doc, label, text, maxWidth){
   const charSpace = bodySize*PX_PER_PT*(20/1000);
   const labelPart='• '+label+': ';
   const labelWidth = doc.getTextWidth(labelPart) + charSpace*labelPart.length;
-  const lines = doc.splitTextToSize(text||'', maxWidth-labelWidth);
+  doc.setFont(FONT_MAP.regular,'normal');
+  const lines = wrapHangingIndent(doc, text, maxWidth-labelWidth, maxWidth, charSpace);
   const lineH = bodySize*PX_PER_PT*lh;
   return lines.length*lineH;
 }
@@ -1553,15 +1577,18 @@ function drawFooterVerde(doc){
   doc.addImage(FOOTER2_ASSET,'PNG', 0, PH-FOOTER_IMG_H, PW, FOOTER_IMG_H);
 }
 
-// Header verde delgado para páginas 2+ ("212 ... TÍTULO ... 212"), posición fija.
+// Header verde para páginas de "IMÁGENES ILUSTRATIVAS": título a la izquierda + "212" a la
+// derecha (UN SOLO "212", no dos) + línea fina debajo — mismo criterio que drawLightHeader,
+// sólo que sobre fondo verde con texto blanco en vez de fondo crema con texto verde.
 const PGREEN_HEAD_H = 150;
 function drawGreenHeader(doc, titulo){
   doc.setFillColor(...GREEN);
   doc.rect(0,0,PW,PGREEN_HEAD_H,'F');
-  const y = PGREEN_HEAD_H/2 + 9;
-  drawText(doc,'212', PMARGIN, y, null, {...T_PAGEHEAD, color:[255,255,255]});
-  drawText(doc, titulo, PW/2, y, null, {...T_PAGEHEAD, color:[255,255,255]}, 'center');
-  drawText(doc,'212', PW-PMARGIN, y, null, {...T_PAGEHEAD, color:[255,255,255]}, 'right');
+  const baseY = PGREEN_HEAD_H*0.52;
+  drawText(doc, titulo, PMARGIN, baseY, PCW-120, {font:'extrabold',size:23,lineHeight:1.4,tracking:20,color:[255,255,255]});
+  drawText(doc,'212', PW-PMARGIN, baseY, null, {...T_PAGEHEAD, color:[255,255,255]}, 'right');
+  doc.setDrawColor(255,255,255); doc.setLineWidth(1.2);
+  doc.line(PMARGIN, PGREEN_HEAD_H-24, PW-PMARGIN, PGREEN_HEAD_H-24);
 }
 
 // Header claro (crema) para la página de INVERSIÓN / "PROYECTO ..." y sus continuaciones —
