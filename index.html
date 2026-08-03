@@ -1564,6 +1564,36 @@ function drawGreenHeader(doc, titulo){
   drawText(doc,'212', PW-PMARGIN, y, null, {...T_PAGEHEAD, color:[255,255,255]}, 'right');
 }
 
+// Header claro (crema) para la página de INVERSIÓN / "PROYECTO ..." y sus continuaciones —
+// título en verde alineado a la izquierda + "212" a la derecha + línea fina debajo, todo
+// sobre fondo crema (NO la franja verde sólida — ese estilo es sólo para IMÁGENES ILUSTRATIVAS).
+function drawLightHeader(doc, titulo){
+  doc.setFillColor(...CREAM);
+  doc.rect(0,0,PW,PGREEN_HEAD_H,'F');
+  const baseY = PGREEN_HEAD_H*0.52;
+  drawText(doc, titulo, PMARGIN, baseY, PCW-120, {font:'extrabold',size:23,lineHeight:1.4,tracking:20,color:GREEN});
+  drawText(doc,'212', PW-PMARGIN, baseY, null, {...T_PAGEHEAD, color:GREEN}, 'right');
+  doc.setDrawColor(...GREEN); doc.setLineWidth(1.2);
+  doc.line(PMARGIN, PGREEN_HEAD_H-24, PW-PMARGIN, PGREEN_HEAD_H-24);
+}
+
+// Caption de foto ilustrativa: título en negrita verde (SIN viñeta "•", termina en ":") y,
+// si hay descripción aparte, un párrafo normal debajo — nunca todo corrido en una sola línea.
+const T_CAPTION_TITLE = {font:'bold', size:20, lineHeight:1.4, tracking:10, color:GREEN};
+const T_BODY_DARK = {font:'regular', size:16, lineHeight:1.5, tracking:10, color:[60,60,60]};
+function drawImageCaption(doc, titulo, desc, x, y, maxWidth){
+  let cy = y;
+  if(titulo) cy = drawText(doc, titulo, x, cy+18, maxWidth, T_CAPTION_TITLE);
+  if(desc)   cy = drawText(doc, desc, x, cy+(titulo?6:18), maxWidth, T_BODY_DARK);
+  return cy;
+}
+function measureImageCaptionHeight(doc, titulo, desc, maxWidth){
+  let h = 0;
+  if(titulo) h += 18 + measureParagraphHeight(doc, titulo, maxWidth, T_CAPTION_TITLE);
+  if(desc)   h += (titulo?6:18) + measureParagraphHeight(doc, desc, maxWidth, T_BODY_DARK);
+  return h;
+}
+
 // Ajusta una imagen dentro de una caja SIN distorsionar (nunca fuerza vertical a horizontal).
 function drawImageFit(doc, foto, x, y, maxW, maxH){
   const iw = foto.w||4, ih = foto.h||3;
@@ -1645,10 +1675,11 @@ async function pdfPresupuesto(){
   doc.text('Descripción del Proyecto', PMARGIN, subtitleY, {charSpace:charSpaceFor(T_SUBTITLE)});
 
   const bodyY0 = subtitleY+41;
-  const bodyBottomLimit = (PH-FOOTER_IMG_H)-40; // nunca invadir el footer
+  const bodyBottomLimitFooter = (PH-FOOTER_IMG_H)-40; // con footer reservado
+  const bodyBottomLimitNoFooter = PH-40;               // sacando el footer de esta página
 
-  // Medimos con dos niveles de espaciado (generoso / compacto) y elegimos el que entra.
-  // Esto evita que un texto un poco más largo de lo normal quede "cortado" contra el footer.
+  // Medimos con tres niveles de espaciado (generoso / medio / compacto) y, si ni así entra,
+  // probamos sacando el footer de esta página antes de resignarnos a recortar texto.
   const CLARO = [222,234,224], CLARO2 = [205,222,210];
   function medirTotal(paraGap, itemGap){
     let h = measureParagraphHeight(doc, introTxt, PCW, T_BODY);
@@ -1657,10 +1688,18 @@ async function pdfPresupuesto(){
     if(zonas.length) h += paraGap; // aire entre intro y el primer bullet
     return h;
   }
+  let paraGap=28, itemGap=22, bodyBottomLimit=bodyBottomLimitFooter, footerOkPag1=true;
+  const disponibleF = bodyBottomLimitFooter - bodyY0;
+  const disponibleNF = bodyBottomLimitNoFooter - bodyY0;
+  let ajustado=false;
+  for(const [pg,ig,lim,fOk] of [[28,22,bodyBottomLimitFooter,true],[16,12,bodyBottomLimitFooter,true],[8,6,bodyBottomLimitFooter,true],
+                                  [28,22,bodyBottomLimitNoFooter,false],[16,12,bodyBottomLimitNoFooter,false],[8,6,bodyBottomLimitNoFooter,false]]){
+    if(medirTotal(pg,ig) <= (fOk?disponibleF:disponibleNF)){
+      paraGap=pg; itemGap=ig; bodyBottomLimit=lim; footerOkPag1=fOk; ajustado=true; break;
+    }
+  }
+  if(!ajustado){ paraGap=8; itemGap=6; bodyBottomLimit=bodyBottomLimitNoFooter; footerOkPag1=false; }
   const disponible = bodyBottomLimit - bodyY0;
-  let paraGap=28, itemGap=22;
-  if(medirTotal(paraGap,itemGap) > disponible){ paraGap=16; itemGap=12; }
-  if(medirTotal(paraGap,itemGap) > disponible){ paraGap=8;  itemGap=6;  }
 
   // Red de seguridad: si NI comprimido al máximo entra en el espacio disponible
   // (texto de la IA más largo de lo normal, dirección/título muy largos que
@@ -1701,11 +1740,11 @@ async function pdfPresupuesto(){
     doc.text(cierreLines, PMARGIN, yBody, {charSpace:cs});
   }
 
-  drawFooterCrema(doc);
+  if(footerOkPag1) drawFooterCrema(doc);
 
   // ── PÁGINA 2 — INVERSIÓN ──────────────────────────────────
   doc.addPage([PW,PH]);
-  drawGreenHeader(doc, titulo);
+  drawLightHeader(doc, titulo);
   let y = PGREEN_HEAD_H + 56;
 
   // Anchos de columna: PRODUCTO más ancho (nombres largos) y PRECIO/TOTAL alineados a la derecha
@@ -1772,11 +1811,9 @@ async function pdfPresupuesto(){
 
   // Más aire entre la tabla y "Bases de ejecución" (antes muy pegado).
   y+=95;
-  const bodyBottomLimit2 = (PH-FOOTER_IMG_H)-40;
+  const bottomWithFooter = (PH-FOOTER_IMG_H)-40;
+  const bottomNoFooter = PH-40; // casi al borde de la página: sin reservar lugar para el footer
 
-  // Bases de ejecución + firma: se arma la lista completa primero y se mide en conjunto.
-  // Sólo si NO entra ni siquiera comprimiendo el espaciado se corta a una página nueva
-  // (y ahí se sigue acumulando ítem por ítem, nunca dejando 1 solo ítem varado solo).
   const condItems = [];
   document.querySelectorAll('#p-conds .cond-item').forEach(c=>{
     const ins=c.querySelectorAll('input');
@@ -1786,48 +1823,56 @@ async function pdfPresupuesto(){
   const firmante = getFirmante();
   const firmaLines = ['Quedamos a disposición para coordinar fecha', '— '+firmante+', Paisajismo 212'];
   const firmaH = measureParagraphHeight(doc,firmaLines[0],PCW,T_BODY) + 4 + measureParagraphHeight(doc,firmaLines[1],PCW,T_BODY);
-
-  y = drawText(doc,'Bases de ejecución', PMARGIN, y, PCW, {...T_SUBTITLE, color:GREEN}) + 24;
+  const tituloBasesH = measureParagraphHeight(doc,'Bases de ejecución',PCW,T_SUBTITLE) + 24;
 
   function alturaTotal(gap){
     return condItems.reduce((s,[tit,txt])=>s+measureLabeledItemHeight(doc,tit,txt,PCW)+gap,0) + 16 + firmaH;
   }
-  let gapUsado = 20;
-  const disponible2 = bodyBottomLimit2 - y;
-  if(alturaTotal(20) > disponible2) gapUsado = 12;
-  if(alturaTotal(gapUsado) > disponible2) gapUsado = 6;
 
-  if(alturaTotal(gapUsado) <= disponible2){
-    // Entra todo en la página actual (con el espaciado que corresponda).
-    condItems.forEach(([tit,txt])=>{ y = drawLabeledItem(doc, tit, txt, PMARGIN, y, PCW, undefined, gapUsado); });
+  // Prioridad: 1) entra con footer, comprimiendo si hace falta — 2) si no entra, se saca
+  // el footer de ESTA página para ganar lugar y entra completo igual — 3) sólo si ni así
+  // entra, recién ahí se pagina (nunca antes; "sólo cuando es necesario para no separar
+  // Bases en dos hojas").
+  const disponibleConFooter = bottomWithFooter - (y + tituloBasesH);
+  const disponibleSinFooter = bottomNoFooter - (y + tituloBasesH);
+  let gap=6, limiteBases=bottomNoFooter, footerOk=false, cabe=false;
+  for(const [g_, lim, fOk] of [[20,bottomWithFooter,true],[12,bottomWithFooter,true],[6,bottomWithFooter,true],
+                                 [20,bottomNoFooter,false],[12,bottomNoFooter,false],[6,bottomNoFooter,false]]){
+    const disp = fOk ? disponibleConFooter : disponibleSinFooter;
+    if(alturaTotal(g_) <= disp){ gap=g_; limiteBases=lim; footerOk=fOk; cabe=true; break; }
+  }
+
+  y = drawText(doc,'Bases de ejecución', PMARGIN, y, PCW, {...T_SUBTITLE, color:GREEN}) + 24;
+
+  if(cabe && alturaTotal(gap) <= (limiteBases - y)){
+    condItems.forEach(([tit,txt])=>{ y = drawLabeledItem(doc, tit, txt, PMARGIN, y, PCW, undefined, gap); });
     y += 16;
+    y = drawText(doc, firmaLines[0], PMARGIN, y, PCW, T_BODY) + 4;
+    y = drawText(doc, firmaLines[1], PMARGIN, y, PCW, T_BODY);
+    if(footerOk) drawFooterVerde(doc);
   } else {
-    // Ni comprimido entra: se va acumulando ítem por ítem y sólo se corta página
-    // cuando el PRÓXIMO ítem realmente no entra (nunca dejando un único ítem varado
-    // si en cambio puede ir agrupado con los anteriores).
+    // Última instancia: pagina ítem por ítem (sin footer en las páginas intermedias, para
+    // ganar el máximo de espacio posible), nunca dejando un ítem varado solo si en cambio
+    // puede ir agrupado con los anteriores.
     condItems.forEach(([tit,txt])=>{
       const alto = measureLabeledItemHeight(doc, tit, txt, PCW) + 12;
-      if(y+alto > bodyBottomLimit2){
-        drawFooterVerde(doc);
+      if(y+alto > bottomNoFooter){
         doc.addPage([PW,PH]);
-        drawGreenHeader(doc,'BASES DE EJECUCIÓN');
+        drawLightHeader(doc, titulo);
         y = PGREEN_HEAD_H + 56;
       }
       y = drawLabeledItem(doc, tit, txt, PMARGIN, y, PCW, undefined, 12);
     });
     y += 16;
+    if(y+firmaH > bottomWithFooter){
+      doc.addPage([PW,PH]);
+      drawLightHeader(doc, titulo);
+      y = PGREEN_HEAD_H + 56;
+    }
+    y = drawText(doc, firmaLines[0], PMARGIN, y, PCW, T_BODY) + 4;
+    y = drawText(doc, firmaLines[1], PMARGIN, y, PCW, T_BODY);
+    drawFooterVerde(doc); // la última página sí tiene lugar reservado para el footer
   }
-
-  if(y+firmaH > bodyBottomLimit2){
-    drawFooterVerde(doc);
-    doc.addPage([PW,PH]);
-    drawGreenHeader(doc,'BASES DE EJECUCIÓN');
-    y = PGREEN_HEAD_H + 56;
-  }
-  y = drawText(doc, firmaLines[0], PMARGIN, y, PCW, T_BODY) + 4;
-  y = drawText(doc, firmaLines[1], PMARGIN, y, PCW, T_BODY);
-
-  drawFooterVerde(doc);
 
   // ── PÁGINAS SIGUIENTES — IMÁGENES ILUSTRATIVAS (sin footer) ──
   // Criterio: cada foto se dibuja a todo el ancho disponible (PCW) y a SU altura
@@ -1838,20 +1883,17 @@ async function pdfPresupuesto(){
   const fotos = pFotos.filter(f=>f.data);
   const IMG_AREA_TOP = PGREEN_HEAD_H+36;   // antes +56 — menos aire arriba, más lugar para la foto
   const IMG_BOTTOM_MARGIN = 40;            // antes 70 — menos margen inferior "en blanco"
-  const CAPTION_IMG_GAP = 14;   // aire entre el texto y la imagen — chico, pegado, no centrado
   const PHOTO_GAP = 32;         // antes 48 — menos aire entre fotos de la misma página
   const bottomLimit = PH - IMG_BOTTOM_MARGIN;
 
   function measureCaptionHeight(foto){
-    if(foto.titulo) return measureLabeledItemHeight(doc, foto.titulo, foto.desc||'', PCW);
-    if(foto.desc) return measureParagraphHeight(doc, foto.desc, PCW, T_BODY);
-    return 0;
+    return measureImageCaptionHeight(doc, foto.titulo||'', foto.desc||'', PCW);
   }
 
   let cursorY = null;
   fotos.forEach(foto=>{
     const hasCaption = !!(foto.titulo || foto.desc);
-    const capH = hasCaption ? measureCaptionHeight(foto)+CAPTION_IMG_GAP : 0;
+    const capH = hasCaption ? measureCaptionHeight(foto) : 0;
     const naturalPhotoH = PCW*((foto.h||3)/(foto.w||4));
     const neededH = capH+naturalPhotoH;
 
@@ -1864,11 +1906,7 @@ async function pdfPresupuesto(){
     }
 
     if(hasCaption){
-      if(foto.titulo){
-        cursorY = drawLabeledItem(doc, foto.titulo, foto.desc||'', PMARGIN, cursorY, PCW, undefined, CAPTION_IMG_GAP);
-      } else {
-        cursorY = drawText(doc, foto.desc, PMARGIN, cursorY, PCW, T_BODY) + CAPTION_IMG_GAP;
-      }
+      cursorY = drawImageCaption(doc, foto.titulo||'', foto.desc||'', PMARGIN, cursorY, PCW);
     }
 
     const availableH = bottomLimit-cursorY;
