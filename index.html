@@ -235,7 +235,7 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
       <div><label>CUIT / CUIL</label><input id="p-cuit" placeholder="20-12345678-9"></div>
       <div>
         <label>Fecha <span class="req-star">*</span></label>
-        <input type="date" id="p-fecha" value="2026-06-25">
+        <input type="date" id="p-fecha">
       </div>
       <div>
         <label>Validez (días) <span class="req-star">*</span></label>
@@ -353,6 +353,8 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 
   <div class="status" id="p-st"></div>
   <button class="btn" id="p-btn" onclick="runPresupuesto()" disabled>✦ Generar Presupuesto PDF</button>
+  <button class="btn" id="p-drive-btn" style="display:none;margin-top:10px;background:#2d6a4f" onclick="guardarPDFEnDriveManual()">📎 Adjuntar a Drive y guardar link en el CRM</button>
+  <div class="status" id="p-drive-st"></div>
 
   <div class="card" id="remito-wrap" style="display:none">
     <h2>Remito de entrega</h2>
@@ -565,6 +567,7 @@ function filterLeadsPresu(){
 }
 
 let selectedLeadPresu = null;
+let lastPresupuestoDoc = null, lastPresupuestoFilename = null;
 
 function selectLeadPresu(i){
   const l = CURRENT_LEAD_LIST_PRESU[i];
@@ -1464,7 +1467,7 @@ function pdfHeader(doc,W,nombre,contacto,fechaISO,validDias,ubic,cuit){
 const PW=1080, PH=1920, PMARGIN=108, PCW=PW-PMARGIN*2;
 const CREAM=[255,252,252], GREEN=[27,67,50];
 const PX_PER_PT = 96/72;
-const TOP_H = 250;                       // alto de la franja crema superior (hoja 1) — calibrado del PDF original
+const TOP_H = 280;                       // alto de la franja crema superior (hoja 1) — aumentado ~12% (antes 250)
 const FOOTER_IMG_H = PW*FOOTER_ASSET_RATIO; // alto del footer-imagen, respetando el aspect ratio del asset
 const BODY_LH = 18*PX_PER_PT*1.6;         // alto de línea del body (18pt, interlineado 1.6)
 const TITLE_LH = 23*PX_PER_PT*1.5;        // alto de línea del título (23pt, interlineado 1.5)
@@ -1657,8 +1660,9 @@ async function pdfPresupuesto(){
 
   // ── PÁGINA 1 ──────────────────────────────────────────────
   doc.setFillColor(...CREAM);doc.rect(0,0,PW,TOP_H,'F');
-  const logoW=300, logoH=logoW*LOGO_PRESUPUESTO_RATIO;
-  try{ doc.addImage(LOGO_PRESUPUESTO,'PNG', PMARGIN, (TOP_H-logoH)/2, logoW, logoH); }catch(e){}
+  const logoW=336, logoH=logoW*LOGO_PRESUPUESTO_RATIO; // +12% (antes 300) y corrido a la izquierda para alinear con el margen de texto
+  const LOGO_X_ADJUST = 14; // compensa el aire interno del PNG; ajustar si sigue viéndose corrido
+  try{ doc.addImage(LOGO_PRESUPUESTO,'PNG', PMARGIN-LOGO_X_ADJUST, (TOP_H-logoH)/2, logoW, logoH); }catch(e){}
 
   doc.setFillColor(...GREEN);
   doc.rect(0,TOP_H,PW,PH-TOP_H,'F');
@@ -1946,25 +1950,53 @@ async function pdfPresupuesto(){
   doc.save(fn);
   document.getElementById('p-st').className='status on';
   document.getElementById('p-st').textContent='✓ PDF descargado: '+fn;
-  guardarPDFEnDrive(doc, fn);
+  lastPresupuestoDoc = doc;
+  lastPresupuestoFilename = fn;
+  const driveBtn = document.getElementById('p-drive-btn');
+  const driveTipoOk = selectedLeadPresu && (selectedLeadPresu._tipo==='Embudo' || selectedLeadPresu._tipo==='Base Leads');
+  driveBtn.style.display = driveTipoOk ? 'block' : 'none';
+  document.getElementById('p-drive-st').textContent = '';
   document.getElementById('remito-wrap').style.display='block';
   updateRemitoPreview();
 }
 
 async function guardarPDFEnDrive(doc, filename){
-  if(!selectedLeadPresu) return;
+  if(!selectedLeadPresu) return {ok:false, msg:'Sin lead seleccionado'};
   // Embudo Activo: el link va a la columna PDF PRESUP (L). Base Leads: se anexa a Observaciones
   // sin borrar lo que ya había. Alianzas no tiene columna de PDF, no se sube.
   const tipoBackend = selectedLeadPresu._tipo==='Embudo' ? 'embudo'
                      : selectedLeadPresu._tipo==='Base Leads' ? 'leads'
                      : null;
-  if(!tipoBackend) return;
+  if(!tipoBackend) return {ok:false, msg:'Este lead no admite adjuntar PDF (Alianzas)'};
   try{
     const datauri = doc.output('datauristring');
     const base64 = datauri.split(',')[1];
-    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    const res = await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({action:'guardarPDF', tipo:tipoBackend, empresa:selectedLeadPresu.empresa, base64, filename})});
-  }catch(e){}
+    const data = await res.json();
+    if(!data.ok) return {ok:false, msg:data.msg||'Error al guardar en Drive'};
+    return {ok:true};
+  }catch(e){
+    return {ok:false, msg:e.message||'Error de conexión'};
+  }
+}
+
+async function guardarPDFEnDriveManual(){
+  if(!lastPresupuestoDoc || !lastPresupuestoFilename) return;
+  const btn = document.getElementById('p-drive-btn');
+  const st = document.getElementById('p-drive-st');
+  btn.disabled = true;
+  st.className = 'status on';
+  st.textContent = '⏳ Subiendo a Drive y guardando link en el CRM...';
+  const r = await guardarPDFEnDrive(lastPresupuestoDoc, lastPresupuestoFilename);
+  btn.disabled = false;
+  if(r.ok){
+    st.className = 'status on';
+    st.textContent = '✓ PDF adjuntado en Drive y link guardado en el CRM (columna PDF PRESUP).';
+  }else{
+    st.className = 'status on err';
+    st.textContent = '✗ '+r.msg;
+  }
 }
 
 // ── REMITO (layout previo, mm/A4 — sin cambios de diseño) ────────────────
@@ -2207,6 +2239,7 @@ addFotoR();addFotoR();
 recalc();
 calcMantenimiento();
 cargarLeadsPresu();
+document.getElementById('p-fecha').value = new Date().toISOString().slice(0,10);
 if(location.hash === '#reporte' || location.hash === '#mantenimiento') switchTab('mantenimiento');
 if(location.hash === '#pos') switchTab('pos');
 </script>
