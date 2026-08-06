@@ -160,6 +160,7 @@ ${preferido ? 'Preferir giros como: ' + preferido + '.' : ''}
 
 REGLAS ABSOLUTAS:
 ${reglas}${correcciones}
+- NUNCA usar guiones medios ni largos ("-" / "—") dentro del mensaje. Reformular con punto, coma o conector.
 
 LO QUE NUNCA SOMOS:
 ${nuncaSomos}
