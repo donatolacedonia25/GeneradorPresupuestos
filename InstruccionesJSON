@@ -1,4 +1,6 @@
 {
+  "_version_notas": "v2 — único cambio estructural: canal_por_rubro y segmentos.rubros ahora usan el vocabulario REAL de las columnas RUBRO de Base Leads / Alianzas / Embudo Activo (ej. 'Adm. Consorcios', no 'administradoras'). Antes canal_por_rubro nunca matcheaba porque el lookup en contacto.js era por clave exacta. El resto del archivo se mantiene igual — ejemplos_buenos y correcciones siguen vacíos a propósito, se llenan con casos reales, no se inventan acá.",
+
   "identidad": {
     "empresa": "Paisajismo 212 / Vivero 212",
     "ciudad": "Mar del Plata, Argentina",
@@ -44,11 +46,14 @@
     "default_interfaz": "Donato",
     "sugerencia_por_rubro": {
       "arquitectura": "Agustin",
-      "desarrolladoras": "Agustin",
-      "constructoras": "Agustin",
-      "hoteles_premium": "Joaquin",
-      "institucional": "Joaquin",
-      "alianza_recomendador": "Agustin",
+      "desarrolladora": "Agustin",
+      "constructora": "Agustin",
+      "hoteleria": "Joaquin",
+      "salud": "Joaquin",
+      "banco": "Joaquin",
+      "aseguradora": "Joaquin",
+      "universidad": "Joaquin",
+      "inmobiliaria": "Agustin",
       "default": "Donato"
     },
     "nota": "La tabla de arriba es solo una sugerencia visual en la interfaz (ej. preseleccionar un radio button). Nunca se autoasigna ni se omite el paso de elección."
@@ -107,22 +112,29 @@
   },
 
   "canal_por_rubro": {
-    "administradoras": "Llamada → WhatsApp",
     "arquitectura": "LinkedIn → mail",
-    "desarrolladoras": "LinkedIn → mail",
-    "hoteles_boutique": "Visita presencial → mail backup",
-    "gastronomia": "Visita presencial o WhatsApp público",
-    "balnearios": "Visita presencial o WhatsApp público",
-    "clinicas": "Mail formal + llamada 48hs",
-    "hospitales": "Mail formal + llamada 48hs",
-    "corporativos": "Mail formal al nombre identificado",
-    "bancos": "Mail formal al nombre identificado",
-    "seguros": "Mail formal al nombre identificado",
-    "coworking": "LinkedIn o visita directa",
-    "tecnologicas": "LinkedIn o visita directa",
+    "adm. consorcios": "Llamada → WhatsApp",
+    "inmobiliaria": "LinkedIn o WhatsApp según contacto identificado",
+    "interiores": "LinkedIn → mail",
+    "constructora": "LinkedIn → mail",
+    "desarrolladora": "LinkedIn → mail",
     "eventos": "Instagram DM → WhatsApp",
-    "red_directa": "WhatsApp o llamada personal"
+    "hoteleria": "Visita presencial → mail backup",
+    "gastronomia": "Visita presencial o WhatsApp público",
+    "balneario": "Visita presencial o WhatsApp público",
+    "salud": "Mail formal + llamada 48hs",
+    "industrial": "Mail formal al nombre identificado",
+    "tecnologia": "LinkedIn o visita directa",
+    "aseguradora": "Mail formal al nombre identificado",
+    "banco": "Mail formal al nombre identificado",
+    "universidad": "Mail formal al nombre identificado",
+    "local comercial": "Visita presencial o WhatsApp público",
+    "oficina": "Mail formal al nombre identificado",
+    "shopping": "Mail formal al nombre identificado",
+    "consorcio edif.": "Llamada → WhatsApp"
   },
+
+  "_nota_rubros": "Estas claves de canal_por_rubro y segmentos.rubros (abajo) están escritas en minúscula y matchean por 'includes()' contra el valor real de la columna RUBRO de cada hoja (Base Leads / Alianzas / Embudo Activo) — no hace falta que coincidan letra por letra, alcanza con que una contenga a la otra. Si aparece un rubro nuevo en el CRM que no está mapeado acá, cae en 'según criterio' o sin segmento — no rompe nada, pero conviene sumarlo a esta lista cuando pase.",
 
   "timing": {
     "base_leads": {
@@ -152,7 +164,7 @@
   },
 
   "estructura_warm": {
-    "descripcion": "Contacto con vínculo previo o referencia. Convierte 5-10x más que cold.",
+    "descripcion": "Contacto con vínculo previo o referencia (detectado primero por la columna ORIGEN de la hoja: 'Red Donato', 'Cliente', 'Referido' — no solo por texto libre en notas). Convierte 5-10x más que cold.",
     "estructura": [
       "Línea 1: Mencionás la conexión o contexto compartido.",
       "Línea 2: Dónde estás parado ahora (empresa + contexto breve).",
@@ -176,7 +188,7 @@
 
   "segmentos": {
     "capex": {
-      "rubros": ["desarrolladoras", "constructoras", "arquitectura"],
+      "rubros": ["desarrolladora", "constructora", "arquitectura"],
       "logica": "El paisajismo es inversión de capital para valorizar el m² y generar efecto visual en entrega/inauguración.",
       "dolor_consciente": "ROI y velocidad de venta.",
       "dolor_inconsciente": "No tener dolores de cabeza en el tramo final. El paisajismo siempre queda para último momento y los plazos aprietan.",
@@ -184,7 +196,7 @@
       "firmante_sugerido": "Agustin"
     },
     "opex": {
-      "rubros": ["hoteleria", "balnearios", "gastronomia", "franquicias"],
+      "rubros": ["hoteleria", "balneario", "gastronomia", "shopping", "local comercial"],
       "logica": "El verde es parte del servicio. Un espacio descuidado pierde clientes, especialmente en el segmento premium.",
       "dolor_consciente": "Estética impecable los 365 días, cero reclamos.",
       "dolor_inconsciente": "Miedo a que las instalaciones luzcan abandonadas fuera de temporada.",
@@ -192,7 +204,7 @@
       "firmante_sugerido": "Donato"
     },
     "institucional": {
-      "rubros": ["clinicas", "bancos", "seguros", "universidades"],
+      "rubros": ["salud", "banco", "aseguradora", "universidad", "industrial", "tecnologia", "oficina", "consorcio edif.", "adm. consorcios"],
       "logica": "El verde comunica solidez, confianza y bienestar. No es el producto principal pero es la cara de la institución.",
       "dolor_consciente": "Imagen de marca, prestigio, entornos de bajo mantenimiento.",
       "dolor_inconsciente": "Retención de talento, recuperación de pacientes (biofilia), eficiencia operativa.",
@@ -200,13 +212,13 @@
       "firmante_sugerido": "Joaquin"
     },
     "catalizadores": {
-      "rubros": ["inmobiliarias"],
+      "rubros": ["inmobiliaria"],
       "logica": "No compran el servicio directamente, pero lo recomiendan para destrabar ventas de lotes o propiedades de alta gama.",
       "nuestro_rol": "Herramienta de cierre. Aliado estratégico.",
       "firmante_sugerido": "Donato"
     },
     "eventos": {
-      "rubros": ["productoras", "organizadores"],
+      "rubros": ["eventos"],
       "logica": "Necesitan ambientación verde puntual, impacto visual.",
       "nuestro_rol": "Proveedor de experiencia sensorial y estética para el evento.",
       "firmante_sugerido": "Donato"
@@ -319,7 +331,7 @@
     "alianzas": {
       "intencion": "Construir vínculo de derivación a largo plazo. Nunca vender, nunca tratar como cliente. NO usa 'segmentos' (capex/opex/etc.) — usa su propia clasificación 'tipos'.",
       "tipo_aliado_fuente": "columna 'TIPO ALIANZA' en CRM (Recomendador / Canal / Co-creador) — no se infiere",
-      "rubro_fuente": "columna 'RUBRO' en CRM (Arquitectura, Inmobiliaria, Constructora, Interiores, Adm. Consorcio, etc.) — es dato de CONTEXTO. El ángulo del mensaje lo define siempre 'tipo' (columna TIPO ALIANZA), nunca se infiere ni se deriva del rubro. El rubro se usa solo para afinar el dato específico mencionado en el mensaje.",
+      "rubro_fuente": "columna 'RUBRO' en CRM — es dato de CONTEXTO. El ángulo del mensaje lo define siempre 'tipo' (columna TIPO ALIANZA), nunca se infiere ni se deriva del rubro. El rubro se usa solo para afinar el dato específico mencionado en el mensaje.",
       "tipos": {
         "recomendador": {
           "definicion": "Nos recomiendan.",
