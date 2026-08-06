@@ -214,9 +214,9 @@ textarea{resize:vertical;min-height:60px;line-height:1.5}
             <option>Env. Presupuesto</option><option>Reconectar</option><option>Esperar respuesta</option>
           </optgroup>
           <optgroup label="Alianzas">
-            <option>Coordinar Reunión</option><option>Env. Presentación</option>
+            <option>1er Contacto</option><option>Env. Presentación</option>
             <option>Seguimiento c/ valor</option><option>Proponer Co-proyecto</option>
-            <option>Recontactar</option><option>Mantener tibio</option>
+            <option>Recontactar</option>
           </optgroup>
         </select>
       </div>
@@ -326,7 +326,7 @@ const ESTADOS_POR_SECCION = {
 const ACCIONES_POR_SECCION = {
   leads: ['Visita Presencial','Env. Mail 1','Env. Mail 2','Env. Mail 3','Env WPP 1','Env WPP 2','Env WPP 3','Env. Presentación','Coordinar Visita','Esperar (poner fecha)','Cerrar ciclo'],
   embudo: ['Llamar','Env. Wpp','Env. Mail','Visita Presencial','Definir Presupuesto','Env. Presupuesto','Reconectar','Esperar respuesta'],
-  alianzas: ['Coordinar Reunión','Env. Presentación','Seguimiento c/ valor','Proponer Co-proyecto','Recontactar','Mantener tibio']
+  alianzas: ['1er Contacto','Env. Presentación','Seguimiento c/ valor','Proponer Co-proyecto','Recontactar']
 };
 
 function poblarSelectsRegistro(tipo) {
@@ -500,9 +500,9 @@ function setNextActionDefaults(lead, tipo) {
     else if (a.includes('visita')) { nextAction = 'Definir Presupuesto'; nextEstado = 'PREP. PROPUESTA'; }
     else { nextAction = 'Llamar'; }
   } else if (tipo === 'alianzas') {
-    if (a.includes('presentaci')) { nextAction = 'Coordinar Reunión'; nextEstado = '1ER CONTACTO'; }
-    else if (a.includes('reuni')) { nextAction = 'Seguimiento c/ valor'; nextEstado = 'CONVERSANDO'; }
-    else { nextAction = 'Mantener tibio'; }
+    if (a.includes('presentaci')) { nextAction = '1er Contacto'; nextEstado = '1ER CONTACTO'; }
+    else if (a.includes('1er contacto')) { nextAction = 'Seguimiento c/ valor'; nextEstado = 'CONVERSANDO'; }
+    else { nextAction = 'Recontactar'; }
   }
 
   const selAccion = document.getElementById('reg-accion');
