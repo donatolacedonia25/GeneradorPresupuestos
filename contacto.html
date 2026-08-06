@@ -306,6 +306,12 @@ let filteredLeads = [];
 let filteredEmbudo = [];
 let filteredAlianzas = [];
 
+// Mismo criterio que esWarm() en contacto.js — si cambia allá, cambiar acá también.
+function esOrigenWarm(origen){
+  const o = (origen || '').toLowerCase();
+  return ['red donato','red joaquin','red agustin','referido','cliente'].some(w => o.includes(w));
+}
+
 function epClass(e){
   return {NUEVO:'e-nuevo',CONTACTADO:'e-contact',CONVERSANDO:'e-conv','PRESUP. ENVIADO':'e-presup','EN ESPERA':'e-espera','NEGOCIACIÓN':'e-neg','VISITA':'e-conv','1ER CONTACTO':'e-contact',ACTIVA:'e-conv',PAUSADO:'e-espera'}[e]||'e-nuevo';
 }
@@ -377,7 +383,7 @@ function renderLeadList(arr, containerId, tipo) {
       <div class="lc-top">
         <div>
           <div class="lc-name">${l.empresa}</div>
-          <div class="lc-sub">${l.contacto}${l.valor ? ' · ' + l.valor : ''}${l.tipoAlianza ? ' · ' + l.tipoAlianza : ''}</div>
+          <div class="lc-sub">${l.contacto}${l.valor ? ' · ' + l.valor : ''}${l.tipoAlianza ? ' · ' + l.tipoAlianza : ''}${l.origen ? ' · ' + l.origen : ''}</div>
         </div>
         <span class="epill ${epClass(l.estado)}">${l.estado}</span>
       </div>
@@ -455,6 +461,7 @@ function selectLead(idx, tipo) {
       ${curLead.tipoAlianza ? `<span style="font-size:11px;background:#fff3cd;padding:2px 7px;border-radius:99px;color:#856404">${curLead.tipoAlianza}</span>` : ''}
       <span style="font-size:11px;background:#f0f0f0;padding:2px 7px;border-radius:99px;color:#555">${curLead.rubro}</span>
       ${curLead.canal ? `<span style="font-size:11px;background:#e8f4ee;padding:2px 7px;border-radius:99px;color:#1B4332">${curLead.canal}</span>` : ''}
+      ${curLead.origen ? `<span style="font-size:11px;background:${esOrigenWarm(curLead.origen) ? '#fff3cd' : '#f0f0f0'};padding:2px 7px;border-radius:99px;color:${esOrigenWarm(curLead.origen) ? '#856404' : '#555'}">${esOrigenWarm(curLead.origen) ? '🔥 ' : ''}${curLead.origen}</span>` : ''}
     </div>
     <div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Contacto:</strong> ${curLead.contacto}</div>
     ${curLead.valor ? `<div style="font-size:12px;color:#444;margin-bottom:4px"><strong>Valor:</strong> ${curLead.valor}</div>` : ''}
