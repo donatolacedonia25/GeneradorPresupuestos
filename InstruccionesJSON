@@ -8,6 +8,38 @@
     "clientes_referencia": ["Shell", "Burgwagen", "Tampico", "Shopping Aldrey", "Green Mug Café", "H. Ledesma"]
   },
 
+  "hechos_verificados": {
+    "_nota": "Fuente única de verdad sobre con quién trabajamos realmente. Ante cualquier duda sobre si se puede mencionar un cliente/rubro, consultar acá antes que inventar o generalizar. Actualizado desde Base de Comunicación B2B v1.",
+    "lista_blanca_trabajo_real": {
+      "Shell (Constitución y la Costa, Ruta 88)": "Mantenimiento recurrente, activo.",
+      "Paseo Aldrey Shopping": "Mantenimiento recurrente, activo.",
+      "Green Mug Café (2 sucursales)": "Proyecto integral.",
+      "Tampico (nueva sucursal)": "Proyecto de 0, inauguración en 24hs.",
+      "H. Ledesma (oficinas)": "Mejora realizada + proyectos en curso.",
+      "ViaCargo (nueva sucursal)": "Colocación.",
+      "Sadaic": "Varios trabajos de mejora.",
+      "Consorcio Pleamar": "Proyecto de mejora puntual — NO es contrato de mantenimiento recurrente.",
+      "Casonas del Haras (varias casas)": "Proyectos residenciales, barrio cerrado.",
+      "Evento Mute / Torreón del Monje": "Provisión de plantas para eventos, gestionado por Donato desde su experiencia personal como organizador de eventos — no como proveedor externo contratado por terceros.",
+      "Clientes particulares": "Múltiples proyectos residenciales."
+    },
+    "casos_especiales_no_generalizar": {
+      "consorcios": "Hay 2 casos reales de mejora puntual (Pleamar + uno más sin nombre confirmado). Esto NO equivale a 'trabajamos con consorcios' como vertical o a tener contrato de administración/mantenimiento recurrente tipo Adm. Consorcios. Nunca afirmar experiencia consolidada en ese segmento.",
+      "arquitectura": "Hay vínculo comercial en desarrollo con varios estudios (contacto realizado, conversación activa) pero CERO proyectos ejecutados todavía. Se puede decir 'estamos conversando con estudios de arquitectura de la ciudad', nunca que ya se ejecutó un proyecto con ellos.",
+      "eventos": "El expertise viene de la experiencia personal de Donato como organizador de eventos, no de Paisajismo 212 como proveedor contratado externamente. Decir 'conocemos el rubro desde adentro' es verídico; decir 'somos proveedores habituales de eventos' todavía no lo es."
+    },
+    "lista_negra_prohibido_afirmar": [
+      "Bancos — sin cliente real.",
+      "Aseguradoras — sin cliente real.",
+      "Clínicas / hospitales — sin cliente real.",
+      "Inmobiliarias — sin cliente real.",
+      "Constructoras — sin cliente real.",
+      "Desarrolladoras — sin cliente real.",
+      "Consorcios como vertical consolidada (solo 2 casos puntuales, ver casos_especiales_no_generalizar).",
+      "Estudios de arquitectura con proyecto ya ejecutado (solo contacto/conversación en curso)."
+    ]
+  },
+
   "voz": {
     "tono": "Humano, cálido, directo. Escrito por una persona real, no por un sistema de marketing. Curiosidad genuina por la empresa contactada. Confianza sin arrogancia. Familiar sin ser informal.",
     "registro": "Tuteo profesional cálido. Cercano pero con la distancia correcta para alguien que todavía no nos conoce. El objetivo es un punto medio: ni corporativo/IA (ver reglas_absolutas) ni informal de barrio (ver prohibido_informal abajo).",
@@ -73,7 +105,8 @@
     "La firma es solo el nombre. Nada más. El footer del mail ya tiene el resto.",
     "Warm (vínculo previo o referencia) vale 5-10x más que cold. Tratarlos igual es un error. Si hay conexión, mencionarla en la primera línea.",
     "Cuando se propone coordinar un día u horario, ofrecer siempre 2 opciones concretas para elegir (ej. '¿el martes o el jueves?'), nunca dejarlo abierto a 'avisame cuando puedas'.",
-    "En Alianzas, nunca acorralar con una sola opción — ofrecer siempre una alternativa suave (ej. 'o si preferís, primero...')."
+    "En Alianzas, nunca acorralar con una sola opción — ofrecer siempre una alternativa suave (ej. 'o si preferís, primero...').",
+    "La visita presencial es prácticamente no negociable, también en Alianzas: no se arma propuesta ni presupuesto sin haber visto el espacio, salvo excepción muy puntual."
   ],
 
   "reglas_por_canal": {
@@ -181,7 +214,8 @@
     "ya_tenemos_proveedor": "'¿Están contentos con el proveedor actual?' Si responde: escuchar. Si no: brief + pausa 60d.",
     "precio_sin_visita": "'Depende del espacio — ¿les parece si paso a verlo y les doy un número real?'",
     "no_responde_48h": "Un solo mensaje de seguimiento. Si tampoco responde: toque 2 a los 21 días.",
-    "rechazo_directo": "Agradecer con una frase. No insistir. Registrar como Pausa 60d."
+    "rechazo_directo": "Agradecer con una frase. No insistir. Registrar como Pausa 60d.",
+    "se_mudan_o_piden_pasar_para_mas_adelante": "Caso real validado: objeción tipo 'nos estamos mudando de oficina, hablemos más adelante'. Responder con tranquilidad y profesionalismo, sin intentar retener ni forzar una fecha en el momento. Registrar con fecha aproximada si la dieron, y hacer el seguimiento espaciado correspondiente — no reaccionar como si fuera un rechazo."
   },
 
   "cierre_ciclo_template": "Hola [Nombre], te escribí un par de veces y entiendo que quizás no es el momento adecuado o simplemente no es algo que les interese ahora. Si en algún momento les gustaría o les interesa, quedamos a disposición. MDP es chica y seguro nos cruzamos. Donato",
@@ -209,7 +243,8 @@
       "dolor_consciente": "Imagen de marca, prestigio, entornos de bajo mantenimiento.",
       "dolor_inconsciente": "Retención de talento, recuperación de pacientes (biofilia), eficiencia operativa.",
       "nuestro_rol": "Custodio de la imagen corporativa.",
-      "firmante_sugerido": "Joaquin"
+      "firmante_sugerido": "Joaquin",
+      "nota_advertencia": "Dentro de este segmento, 'adm. consorcios' y 'consorcio edif.' NO tienen cliente de administración recurrente real todavía — solo 2 proyectos puntuales de mejora (ver hechos_verificados.casos_especiales_no_generalizar). No usar 'ya trabajamos con consorcios' como frase de apertura; usar el ángulo de 'un solo proveedor confiable' como propuesta a futuro, no como caso ya resuelto."
     },
     "catalizadores": {
       "rubros": ["inmobiliaria"],
@@ -232,6 +267,21 @@
     "No queremos sonar a marketing armado ni a IA.",
     "No somos un vivero de producción a gran escala con grandes pasillos de cultivo — el diferencial real es el stock propio y el acceso directo, no la escala."
   ],
+
+  "principios_voz_mdp": {
+    "_nota": "Cultura específica de Mar del Plata en B2B, extraída de casos reales — no teoría genérica.",
+    "referencia_sobre_geografia": "No es tanto 'somos de acá' lo que genera confianza — es tener a alguien en común, una referencia verificable. El mecanismo de confianza es social, no geográfico. Si hay un warm intro (alguien que dio el contacto), mencionarlo SIEMPRE en la primera línea — pesa más que cualquier otro elemento del mensaje.",
+    "ritmo": "Nunca a los golpes. Se avanza al ritmo de la otra persona, no del vendedor. Insistir o apurar rompe la relación antes de que empiece. Leer si el silencio es desinterés real o simple timing, y no confundir uno con otro.",
+    "deteccion_de_lo_armado": "Cualquier mensaje que suene a IA, a corporativo, o sobreproducido ('con brillantina') genera rechazo inmediato en MDP. Tiene que sonar como lo escribió una persona pensando en esa persona específica.",
+    "calibracion_formalidad": "No hay un registro único correcto — se ajusta según el nivel/rubro de la empresa. El punto fijo es siempre: humano, natural, simple, concreto. Ni demasiado técnico ni demasiado informal."
+  },
+
+  "diferencial_real": {
+    "_nota": "Lo que efectivamente inclina la balanza en la decisión real del prospecto — no el argumento de portfolio. Usar con criterio, nunca como pitch agresivo de precio.",
+    "precio": "Frente a competidores de primer nivel (ej. Antoniucci), la diferencia de valor es real y significativa. No es un matiz — es un factor de decisión concreto que se puede mencionar cuando surge comparación directa.",
+    "cercania_vs_desgaste_de_marca_grande": "Hay un segmento de prospectos que activamente busca alejarse de proveedores grandes por sentirlos soberbios o desconectados. Ahí Paisajismo 212 gana por ser cercano y accesible, no por superioridad técnica.",
+    "nota": "Estos dos factores (mejor precio + trato personal) son los que el prospecto verbaliza como razón real de decisión — más que la historia de 18 años o la calidad de diseño, que son ciertas pero no son lo que mueve la aguja en la conversación."
+  },
 
   "secciones": {
 
@@ -452,6 +502,39 @@
     }
   },
 
-  "ejemplos_buenos": [],
-  "correcciones": []
+  "ejemplos_buenos": [
+    {
+      "caso": "Arquitecta Laura — cold, WhatsApp",
+      "contexto": "Primer contacto en frío a una arquitecta referente de la ciudad, sin vínculo previo.",
+      "mensaje": "Hola Laura, cómo estás? soy Donato de Vivero 212. Vengo siguiendo tu trabajo desde hace tiempo y sé que sos referente en la ciudad. Te escribo porque nosotros hacemos paisajismo, algunos de nuestros clientes son Shell, Burgwagen y el Shopping Aldrey. Me encantaría tener la oportunidad de conocerte. ¿Crees que podremos conversar unos minutos por llamada o podré pasar a conocerte en persona? Gracias Laura.",
+      "resultado": "Respuesta directa, derivó en reunión.",
+      "por_que_funciono": "Reconocimiento específico y verificable + 3 clientes de referencia + pedido de bajísima fricción (conocerse, no vender)."
+    },
+    {
+      "caso": "Arquitecto Juan Cruz — cold, WhatsApp",
+      "contexto": "Misma estructura que el caso Laura, adaptando el reconocimiento al estudio.",
+      "mensaje": "Hola Juan Cruz, cómo estás? soy Donato de Vivero 212. Vengo siguiendo tu trabajo con el estudio de arquitectura y veo que están haciendo proyectos importantes en la ciudad. Te escribo porque nosotros hacemos paisajismo, algunos de nuestros clientes son Shell, Burgwagen y el Shopping Aldrey. Me encantaría tener la oportunidad de conocerte. ¿Crees que podremos conversar unos minutos por llamada o podré pasar a conocerte en persona? Gracias Juan Cruz.",
+      "resultado": "Efectivo, misma estructura que Laura.",
+      "por_que_funciono": "Mismo patrón: reconocimiento real + referencias + pedido de bajísima fricción."
+    },
+    {
+      "caso": "Arquitecta Rosario (G7) — cold, requirió 2 toques",
+      "contexto": "No respondió el mensaje 1 (más largo, con investigación detallada). Sí respondió el mensaje 2, mucho más corto y de menor fricción. Hoy propone proyectos activamente.",
+      "mensaje_1": "Hola Rosario, cómo estás? Soy Donato de Vivero 212. Estuve investigando algunos de los trabajos que hiciste con G7, especialmente la remodelación en la Clínica Pueyrredón y sus proyectos de Home Staging, ví que trabajás a un nivel de detalle impecable. Te escribo porque nosotros hacemos paisajismo, algunos de nuestros clientes son Shell, Burgwagen y el Shopping Aldrey. Me encantaría tener la oportunidad de conocerte. ¿Crees que podremos conversar unos minutos por llamada o podré pasar a conocerte en persona? Gracias Rosario.",
+      "mensaje_2": "Hola Rosario, cómo estás? Vuelvo a escribirte brevemente, espero no molestar. Sigo con interés de que puedas conocer nuestro trabajo porque sé que son dos aristas que conviven dentro de los espacios. ¿Te parece bien si simplemente te comparto acá nuestra presentación para que las veas si querés? Que una linda tarde Rosario, gracias!",
+      "resultado": "Sin respuesta al mensaje 1. Respondió al mensaje 2. Hoy propone proyectos activamente.",
+      "por_que_funciono": "El mensaje 2 bajó la fricción del pedido (de 'llamada o encuentro' a 'te mando algo, si querés'), reconoció el contacto previo sin ser insistente ('espero no molestar'), y el pedido quedó prácticamente sin costo de decisión para ella. Lección: si el toque 1 (más ambicioso) no responde, el toque 2 debe reducir la fricción, no repetir el pedido con más insistencia."
+    },
+    {
+      "caso": "Hotel Costa Galana (Karina) — warm, mail",
+      "contexto": "Contacto con referencia directa (Roberto Jerpi dio el contacto). Generó visita y hoy está en proceso de presupuesto.",
+      "mensaje": "Hola Karina, ¿cómo estás? Te escribo porque hablé con Roberto Jerpi y me dio tu contacto. Mi nombre es Donato, de Paisajismo 212, una empresa familiar de paisajismo y vivero acá en Mar del Plata, con 18 años trabajando en la ciudad. Quería presentarme porque nosotros ya venimos trabajando en rubros similares que demandan mucha atención al detalle, como el Paseo Aldrey y estaciones Shell. Sabemos que la hotelería tiene sus particularidades. Si es de interés para el hotel, y te parece una buena idea, podemos conversar sobre cómo gestionan los espacios verdes hoy en día y cómo podemos sumar desde nuestra experiencia, al área que estás liderando. Quedo atento, Gracias Karina Atte, Donato",
+      "resultado": "Generó visita presencial. Actualmente en proceso de presupuesto.",
+      "por_que_funciono": "Es el único de los 4 casos que abre con una referencia humana concreta (Roberto Jerpi) en vez de investigación previa del prospecto — el warm intro elimina de entrada la necesidad de construir credibilidad desde cero. Confirma la regla: warm vale 5-10x más que cold, y la conexión va siempre en la primera línea."
+    }
+  ],
+  "correcciones": [
+    "Error ya detectado y corregido: el sistema afirmó que 'ya trabajamos con consorcios' cuando ese tipo de cliente (administración recurrente) todavía no existe en la cartera real — solo hay 2 proyectos puntuales de mejora. Ver hechos_verificados.casos_especiales_no_generalizar.",
+    "No generalizar el vínculo con estudios de arquitectura como 'clientes' — hay conversación y contacto activo, cero proyectos ejecutados todavía."
+  ]
 }
