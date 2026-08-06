@@ -37,7 +37,6 @@ function loadInstrucciones() {
     const filePath = path.join(process.cwd(), 'instrucciones.json');
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
   } catch(e) {
-    // Fallback mínimo si el JSON no carga — evita que la app se caiga entera.
     return {
       identidad: { empresa: 'Paisajismo 212 / Vivero 212', ciudad: 'Mar del Plata, Argentina', historia: '18 años de historia.', clientes_referencia: ['Shell', 'Burgwagen', 'Shopping Aldrey', 'Green Mug Café', 'Tampico'] },
       voz: { tono: 'Cálido, directo, humano.', maximo_palabras_wa: 80, maximo_palabras_mail: 150, parrafos_max_lineas: 3 },
@@ -64,7 +63,7 @@ function normalizarCanal(canalTexto) {
 
 function normalizarEstado(estadoTexto) {
   return (estadoTexto || '')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita tildes (NEGOCIACIÓN -> NEGOCIACION)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toUpperCase()
     .trim()
     .replace(/\s+/g, '_')
@@ -79,9 +78,21 @@ function normalizarTipoAlianza(tipoTexto) {
   return null;
 }
 
+// FIX #1: matching tolerante para canal_por_rubro (antes era clave exacta y nunca matcheaba
+// contra los valores reales de la hoja, ej. "Adm. Consorcios" vs clave "administradoras").
+function buscarCanalPorRubro(inst, rubro) {
+  const canalPorRubro = inst.canal_por_rubro || {};
+  const rubroLower = (rubro || '').toLowerCase().trim();
+  if (!rubroLower) return null;
+  for (const [key, canal] of Object.entries(canalPorRubro)) {
+    if (rubroLower.includes(key) || key.includes(rubroLower)) return canal;
+  }
+  return null;
+}
+
 function buscarSegmentoPorRubro(inst, rubro) {
   const segmentos = inst.segmentos || {};
-  const rubroLower = (rubro || '').toLowerCase();
+  const rubroLower = (rubro || '').toLowerCase().trim();
   for (const [key, seg] of Object.entries(segmentos)) {
     const rubros = (seg.rubros || []).map(r => r.toLowerCase());
     if (rubros.some(r => rubroLower.includes(r) || r.includes(rubroLower))) {
@@ -89,6 +100,18 @@ function buscarSegmentoPorRubro(inst, rubro) {
     }
   }
   return null;
+}
+
+// FIX #2: el warm ahora se decide primero por la columna ORIGEN (dato estructurado real
+// de la hoja: "Red Donato", "Cliente", "Referido", etc.) y recién si no hay dato ahí,
+// cae al escaneo de texto libre en notas/contexto como respaldo.
+function esWarm(lead, ctx) {
+  const origen = (lead.origen || '').toLowerCase();
+  const origenesWarm = ['red donato', 'red joaquin', 'red agustin', 'referido', 'cliente'];
+  if (origenesWarm.some(o => origen.includes(o))) return true;
+
+  const texto = `${lead.notas || ''} ${ctx || ''}`.toLowerCase();
+  return texto.includes('warm') || texto.includes('red donato') || texto.includes('referencia');
 }
 
 // Elige el paso de la secuencia de presupuesto según los días transcurridos.
@@ -155,7 +178,7 @@ function buildUserPrompt(tipo, datos, inst) {
     const seccion = (datos.seccion || lead.seccion || 'base_leads').toLowerCase();
     const estadoNorm = normalizarEstado(lead.estado);
     const canalNorm = normalizarCanal(lead.canal);
-    const canalSugerido = ((inst.canal_por_rubro || {})[lead.rubro] || 'según criterio');
+    const canalSugerido = buscarCanalPorRubro(inst, lead.rubro) || 'según criterio'; // FIX #1
 
     const bloques = [];
 
@@ -164,6 +187,7 @@ Empresa: ${lead.empresa}
 Contacto: ${lead.contacto}
 Estado: ${lead.estado}
 Rubro: ${lead.rubro || 'sin dato'}
+Origen: ${lead.origen || 'sin dato'}
 Canal: ${lead.canal || canalSugerido}
 Acción pendiente: ${lead.accion || 'primer contacto'}
 Días sin contacto: ${lead.dias || 0}
@@ -171,12 +195,10 @@ Valor: ${lead.valor || 'sin dato'}
 Notas: ${lead.notas || 'sin notas'}
 ${ctx ? 'Contexto adicional: ' + ctx : ''}`);
 
-    // --- Reglas del canal específico (si aplica) ---
     if (canalNorm && inst.reglas_por_canal && inst.reglas_por_canal[canalNorm]) {
       bloques.push(`REGLAS DEL CANAL (${canalNorm}):\n${JSON.stringify(inst.reglas_por_canal[canalNorm], null, 2)}`);
     }
 
-    // --- Segmento por rubro (solo aplica a base_leads / embudo_activo) ---
     if (seccion !== 'alianzas') {
       const seg = buscarSegmentoPorRubro(inst, lead.rubro);
       if (seg) {
@@ -188,7 +210,6 @@ Nuestro rol: ${seg.nuestro_rol || ''}`);
       }
     }
 
-    // --- Lógica específica por sección ---
     const seccionesInst = inst.secciones || {};
 
     if (seccion === 'alianzas') {
@@ -209,20 +230,16 @@ Rubro de contexto (NO determina el ángulo, solo aporta el dato específico a me
       }
 
     } else {
-      // base_leads o embudo_activo
       const seccionInfo = seccionesInst[seccion] || {};
       const estadoInfo = (seccionInfo.estados || {})[estadoNorm];
 
       if (estadoInfo) {
-        // Si el estado remite a una regla de toque genérica (Base Leads NUEVO/CONTACTADO/SEGUIMIENTO)
         if (estadoInfo.usa_regla_toque && inst.reglas_por_toque) {
           bloques.push(`REGLA DE TOQUE (${estadoInfo.usa_regla_toque}):\n${inst.reglas_por_toque[estadoInfo.usa_regla_toque] || ''}`);
         }
-        // Si el estado remite a un template fijo (ej. cierre_ciclo_template)
         if (estadoInfo.usa_template && inst[estadoInfo.usa_template]) {
           bloques.push(`TEMPLATE BASE A ADAPTAR (no copiar literal, adaptar al lead):\n${inst[estadoInfo.usa_template]}`);
         }
-        // Si el estado remite a la secuencia de presupuesto (Embudo Activo → PRESUP_ENVIADO)
         if (estadoInfo.usa_secuencia === 'secuencia_presupuesto') {
           const paso = elegirPasoPresupuesto(inst, lead.dias);
           if (paso) {
@@ -236,7 +253,6 @@ ${paso.regla ? 'Regla: ' + paso.regla : ''}`);
           }
           bloques.push(`Regla general de la secuencia: ${(inst.secuencia_presupuesto || {}).regla_dura_general || ''}`);
         }
-        // CTA de ejemplo y reglas duras propias del estado (si existen, más allá de lo anterior)
         if (estadoInfo.cta_ejemplos) {
           bloques.push(`CTA DE REFERENCIA para este estado (inspirate, no copies literal):\n- ${estadoInfo.cta_ejemplos.join('\n- ')}`);
         }
@@ -251,10 +267,9 @@ ${paso.regla ? 'Regla: ' + paso.regla : ''}`);
         }
       }
 
-      // Warm: si hay conexión/referencia marcada en notas o contexto
-      const textoWarm = `${lead.notas || ''} ${ctx || ''}`.toLowerCase();
-      if (textoWarm.includes('warm') || textoWarm.includes('red donato') || textoWarm.includes('referencia')) {
-        bloques.push(`ESTRUCTURA WARM (hay vínculo previo/referencia):\n${JSON.stringify(inst.estructura_warm, null, 2)}`);
+      // FIX #2: warm ahora considera ORIGEN primero, texto libre como respaldo.
+      if (esWarm(lead, ctx)) {
+        bloques.push(`ESTRUCTURA WARM (hay vínculo previo/referencia — Origen: "${lead.origen || 'detectado en notas'}"):\n${JSON.stringify(inst.estructura_warm, null, 2)}`);
       }
     }
 
