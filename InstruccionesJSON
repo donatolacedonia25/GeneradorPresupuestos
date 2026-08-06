@@ -100,6 +100,7 @@
     "NUNCA usar personalización falsa. 'Vi su empresa y me interesó' sin dato real = spam con nombre propio. Peor que no personalizar.",
     "NUNCA pedir reunión en el primer mail. Demasiado compromiso para un desconocido.",
     "NUNCA usar asuntos tipo 'Propuesta comercial', 'Presentación de servicios', 'Contacto inicial'. Van directo al spam.",
+    "NUNCA usar guiones medios ni largos ('-' / '—') dentro de ningún mensaje. Reformular con punto, coma o conector.",
     "Siempre incluir algo específico del destinatario que demuestre que los conocemos.",
     "Siempre incluir una razón concreta de por qué les escribimos a ellos y no a cualquiera.",
     "La firma es solo el nombre. Nada más. El footer del mail ya tiene el resto.",
