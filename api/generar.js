@@ -56,6 +56,10 @@ function stripMarkdown(str) {
   return str.replace(/\*\*/g, '').replace(/\*/g, '').replace(/^#+\s?/gm, '').trim();
 }
 
+function countWords(s) {
+  return s ? s.trim().split(/\s+/).filter(Boolean).length : 0;
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -68,6 +72,9 @@ module.exports = async (req, res) => {
 
   const { tipo, datos, imagen } = req.body;
 
+  // ============================================================
+  //  IMPORTAR ÍTEMS DESDE UNA FOTO DEL EXCEL
+  // ============================================================
   if (tipo === 'importar_items') {
     try {
       if (!imagen || !imagen.base64) return res.status(400).json({ ok: false, error: 'No se recibió imagen' });
@@ -90,13 +97,14 @@ module.exports = async (req, res) => {
               type: 'text',
               text: `You are a JSON API. Analyze this price table image and extract all items.
 RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
-Format: {"items":[{"nombre":"Item name","cantidad":1,"precioUnitario":50000}]}
+Format: {"items":[{"nombre":"Item name","cantidad":1,"precioUnitario":50000,"grupo":""}]}
 Rules:
 - precioUnitario must be integer number only, no symbols
 - If you see total price and quantity, calculate unit price = total / quantity
 - If no quantity, use 1. If price unreadable, use 0
 - Skip rows that are TOTAL, subtotal or column headers
-- If a row is labeled "EJECUCIÓN COMPLETA Y LOGÍSTICA" or similar (execution/logistics line with no per-unit quantity), set "cantidad":1 and "precioUnitario" equal to that row's TOTAL value directly (do not divide it)
+- If the table groups rows under a section or sector heading, put that heading in "grupo" for each row under it. If there are no groupings, use "" for every row.
+- If a row is labeled "EJECUCIÓN COMPLETA Y LOGÍSTICA" or similar (execution/logistics line with no per-unit quantity), set "cantidad":1, "grupo":"" and "precioUnitario" equal to that row's TOTAL value directly (do not divide it)
 ONLY JSON. START WITH {`
             }
           ]
@@ -111,6 +119,109 @@ ONLY JSON. START WITH {`
     }
   }
 
+  // ============================================================
+  //  PRESUPUESTO v2 — devuelve los campos de la plantilla nueva
+  // ============================================================
+  if (tipo === 'presupuesto_v2') {
+    try {
+      const r = await claudeRequest(apiKey, {
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1200,
+        messages: [{
+          role: 'user',
+          content: `You are a JSON API for Paisajismo 212, a landscaping company in Mar del Plata, Argentina.
+RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanation.
+
+Format:
+{"portada_titulo":"","diag_titulo":"","observaciones":["","",""],"prop_titulo":"","sectores":[{"nombre":"","accion":"","especies":""}],"foto_epigrafe":"","alcance_linea":"","cierre_titulo":"","siguiente_paso":"","agradecimiento":""}
+
+Write everything in Argentine Spanish, using "vos" (not "tú"), addressing the client directly.
+
+RAW CONTEXT from the site visit (may be informal and unordered):
+${datos && datos.contexto ? datos.contexto : ''}
+
+Client first name (for the closing line only): ${datos && datos.cliente ? datos.cliente : ''}
+Project title hint (optional): ${datos && datos.etapaProyecto ? datos.etapaProyecto : ''}
+
+FIELD RULES — each one is a hard constraint, not a suggestion:
+
+"portada_titulo": MAXIMUM 8 WORDS. Affirms a benefit the client will get, in their own terms. Never the name of the service. Ends with a period. Examples of the right register: "El frente que se ve cuidado todo el año." / "Un patio que se usa, no que se mira."
+
+"diag_titulo": ONE line, max 8 words, states that the space was read and understood before proposing. Not a complaint about the space.
+
+"observaciones": EXACTLY 3 strings, or fewer if the context does not support 3. Each one is ONE sentence, maximum 18 words, stating a concrete fact observed on site: light, soil, drainage, existing condition, the view the client has. Factual, no adjectives of value, no proposed solution. All three combined must stay under 45 words.
+
+"prop_titulo": max 8 words, affirms the shape of the solution.
+
+"sectores": 1 to 3 objects, ONLY for sectors clearly present in the context.
+  - "nombre": 2-4 words naming the physical area the client would recognize.
+  - "accion": ONE sentence, MAXIMUM 12 WORDS, active voice, first person plural, present tense. Starts with the verb of what WE do. Correct: "Alineamos el frente con dos Lagerstroemia y cerramos el borde." Wrong: "Se propone incorporar Lagerstroemia" / "El frente será alineado".
+  - "especies": species names only, separated by " · ", no quantities, no sentences. Empty string if the context names none.
+
+"foto_epigrafe": ONE line describing what the reference image shows, max 14 words.
+
+"alcance_linea": 3 to 6 words separated by " · " describing scope. Example: "Proyecto integral · 1 jornada · llave en mano". Infer the number of workdays only if the context states it; otherwise omit that part.
+
+"cierre_titulo": max 8 words, leaves the decision open and easy. Not a question.
+
+"siguiente_paso": ONE sentence with a verb, describing the single action the client takes next. Example: "Confirmás por WhatsApp y agendamos la jornada."
+
+"agradecimiento": ONE line, uses the client's first name if provided, no flattery.
+
+GLOBAL BANS — violating any of these invalidates the response:
+- FORBIDDEN WORDS anywhere: "se propone", "se sugiere", "se realizará", "apasionado", "sueño", "mágico", "oasis", "rincón", "espacios que inspiran", "soluciones a medida", "aproximadamente".
+- NEVER invent a number. No square metres, no counts of plants, no prices, no years. If the context gives no number, use none.
+- NEVER repeat the client's name or address except in "agradecimiento".
+- PLAIN TEXT ONLY: no markdown, no bold, no bullets, no emojis, no colons used as labels.
+- No sentence may exceed 20 words anywhere in the response.
+
+ONLY JSON. START WITH {`
+        }]
+      });
+
+      const c = parseJSON(extractText(r));
+
+      const PROHIBIDAS = /\b(se propone|se sugiere|se realizará|apasionad\w*|sueño|mágico|oasis|espacios que inspiran|aproximadamente)\b/gi;
+      const limpiar = (s, maxPal) => {
+        let t = stripMarkdown(String(s || '')).replace(PROHIBIDAS, '').replace(/\s{2,}/g, ' ').trim();
+        return maxPal ? limitWords(t, maxPal) : t;
+      };
+
+      const salida = {
+        portada_titulo: limpiar(c.portada_titulo, 8),
+        diag_titulo:    limpiar(c.diag_titulo, 8),
+        observaciones:  (Array.isArray(c.observaciones) ? c.observaciones : [])
+                          .map(o => limpiar(o, 18)).filter(Boolean).slice(0, 3),
+        prop_titulo:    limpiar(c.prop_titulo, 8),
+        sectores:       (Array.isArray(c.sectores) ? c.sectores : [])
+                          .filter(x => x && (x.nombre || x.accion))
+                          .slice(0, 3)
+                          .map(x => ({
+                            nombre:   limpiar(x.nombre, 4),
+                            accion:   limpiar(x.accion, 12),
+                            especies: limpiar(x.especies)
+                          })),
+        foto_epigrafe:   limpiar(c.foto_epigrafe, 14),
+        alcance_linea:   limpiar(c.alcance_linea),
+        cierre_titulo:   limpiar(c.cierre_titulo, 8),
+        siguiente_paso:  limpiar(c.siguiente_paso, 16),
+        agradecimiento:  limpiar(c.agradecimiento, 20)
+      };
+
+      const avisos = [];
+      if (countWords(salida.observaciones.join(' ')) > 45) avisos.push('Las observaciones superan 45 palabras: acortalas antes de enviar.');
+      if (!salida.sectores.length) avisos.push('No se identificaron sectores en las notas. Cargalos a mano.');
+
+      return res.status(200).json({ ok: true, contenido: salida, avisos });
+
+    } catch(e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ============================================================
+  //  PRESUPUESTO (versión vieja — se conserva funcionando)
+  // ============================================================
   if (tipo === 'presupuesto') {
     try {
       const r = await claudeRequest(apiKey, {
@@ -123,8 +234,8 @@ RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanati
 Format: {"intro":"text","items":[{"titulo":"Zona o tarea","texto":"text"}],"cierre":"text"}
 
 Write in Spanish. Use this data as raw context (may be long, unordered, informal):
-- Etapa / título del proyecto: ${datos.etapaProyecto || ''}
-- Contexto completo (tipo de espacio, objetivo, propuesta técnica, especies, etapa, lo que aporte el usuario): ${datos.contexto || ''}
+- Etapa / título del proyecto: ${datos && datos.etapaProyecto ? datos.etapaProyecto : ''}
+- Contexto completo (tipo de espacio, objetivo, propuesta técnica, especies, etapa, lo que aporte el usuario): ${datos && datos.contexto ? datos.contexto : ''}
 (Ubicación y nombre del cliente ya aparecen en otra parte del documento: NUNCA los repitas ni los menciones en el texto.)
 
 This is a structured proposal document, not a single wall of text. Break the content into three clearly separate parts:
@@ -160,10 +271,9 @@ ONLY JSON. START WITH {`
         countWords(contenido.intro) +
         contenido.items.reduce((s, it) => s + countWords(it.texto), 0) +
         countWords(contenido.cierre);
-      function countWords(s){ return s ? s.trim().split(/\s+/).filter(Boolean).length : 0; }
+
       let sobra = totalPalabras() - 170;
       if (sobra > 0) {
-        const recortarDesde = contenido.cierre;
         contenido.cierre = limitWords(contenido.cierre, Math.max(0, countWords(contenido.cierre) - sobra));
         sobra = totalPalabras() - 170;
       }
@@ -187,6 +297,9 @@ ONLY JSON. START WITH {`
     }
   }
 
+  // ============================================================
+  //  REPORTE DE MANTENIMIENTO
+  // ============================================================
   if (tipo === 'reporte') {
     try {
       const r = await claudeRequest(apiKey, {
@@ -199,13 +312,13 @@ RESPOND ONLY WITH VALID JSON. NO text before or after. NO markdown. NO explanati
 Format: {"intro":"text","trabajosEspecificosTexto":"Título: frase|||Título: frase","alertasTexto":"Título: frase|||Título: frase or empty string"}
 
 Write in Spanish. Use this data:
-- Cliente: ${datos.nombreCliente || ''}
-- Fecha: ${datos.fechaVisita || ''}
-- Ubicación: ${datos.ubicacion || ''}
+- Cliente: ${datos && datos.nombreCliente ? datos.nombreCliente : ''}
+- Fecha: ${datos && datos.fechaVisita ? datos.fechaVisita : ''}
+- Ubicación: ${datos && datos.ubicacion ? datos.ubicacion : ''}
 - Intervenciones específicas realizadas (formato "Título: dato breve que anotó el operario"), una por línea:
-${datos.trabajosEspecificos || '(ninguna)'}
+${datos && datos.trabajosEspecificos ? datos.trabajosEspecificos : '(ninguna)'}
 - Alertas o detecciones (formato "Título: dato breve que anotó el operario"), una por línea:
-${datos.novedades || '(ninguna)'}
+${datos && datos.novedades ? datos.novedades : '(ninguna)'}
 
 Task for "trabajosEspecificosTexto": for each line in "Intervenciones específicas", write ONE short executive sentence that naturally combines the título and the dato into a finished phrase, same order, separated by |||. If there are no lines, use empty string "".
 Task for "alertasTexto": for each line in "Alertas o detecciones", write ONE short sentence. If the título is "Oportunidad de expansión detectada", phrase it as a commercial opportunity (a possible new job), not as a problem. The rest (plaga/hongo, falla en infraestructura, estrés agudo) should be phrased as a protective/informative alert, calm and factual, no alarmism. Same order, separated by |||. If there are no lines, use empty string "".
