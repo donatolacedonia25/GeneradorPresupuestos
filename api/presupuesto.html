@@ -65,12 +65,13 @@ input[type=range]{width:100%;accent-color:#3E6B52}
 .wrap{transform-origin:top center}
 .page{
   width:var(--pw);height:var(--ph);position:relative;overflow:hidden;
-  padding:var(--mg);display:flex;flex-direction:column;margin-bottom:26px;
+  padding:var(--mg);padding-bottom:calc(var(--mg) + 74px*var(--k));display:flex;flex-direction:column;margin-bottom:26px;
 }
 .page.noche{background:var(--noche);color:var(--crema)}
 .page.verde{background:var(--verde);color:var(--crema)}
 .page.crema{background:var(--crema);color:var(--noche)}
 .page.sangre{padding:0;background:var(--noche)}
+.page.sangre{padding-bottom:0}
 
 .etq{font-size:calc(21px*var(--k));font-weight:500;letter-spacing:.28em;text-transform:uppercase}
 .crema .etq{color:#6E7F6E}
@@ -105,9 +106,10 @@ h1.portada{font-family:var(--serif);font-weight:400;font-size:calc(96px*var(--k)
 .obs li{list-style:none;font-size:calc(27px*var(--k));font-weight:300;line-height:1.45;padding:calc(13px*var(--k)) 0 calc(13px*var(--k)) calc(30px*var(--k));position:relative;border-top:1px solid rgba(12,35,24,.12)}
 .obs li:first-child{border-top:none}
 .obs li::before{content:"";position:absolute;left:0;top:calc(26px*var(--k));width:calc(14px*var(--k));height:1px;background:var(--arena)}
-.cifras{display:flex;gap:calc(62px*var(--k));border-top:1px solid rgba(12,35,24,.14);padding-top:calc(30px*var(--k));margin-top:calc(24px*var(--k))}
-.cifra .n{font-family:var(--serif);font-weight:300;font-size:calc(126px*var(--k));line-height:.88;letter-spacing:-.03em}
-.cifra .u{font-size:calc(19px*var(--k));letter-spacing:.14em;text-transform:uppercase;color:#6E7F6E;margin-top:calc(12px*var(--k))}
+.cifras{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:auto auto;gap:0 calc(30px*var(--k));align-items:start;border-top:1px solid rgba(12,35,24,.14);padding-top:calc(30px*var(--k));margin-top:calc(24px*var(--k))}
+.cifra{display:contents}
+.cifra .n{grid-row:1;font-family:var(--serif);font-weight:300;font-size:calc(126px*var(--k));line-height:.9;letter-spacing:-.03em}
+.cifra .u{grid-row:2;font-size:calc(18px*var(--k));letter-spacing:.12em;text-transform:uppercase;color:#6E7F6E;margin-top:calc(12px*var(--k));line-height:1.4;max-width:92%}
 
 /* P3 sectores */
 #p_sectores{flex:1 1 auto;display:flex;flex-direction:column;justify-content:space-evenly;min-height:0}
@@ -121,6 +123,7 @@ h1.portada{font-family:var(--serif);font-weight:400;font-size:calc(96px*var(--k)
 .marco{position:absolute;inset:0;overflow:hidden;background:#16261C}
 .marco img{width:100%;height:100%;object-fit:cover;display:block}
 .marco .vacia{position:absolute;inset:0;color:#4A5A4C}
+.page.sangre::before{content:"";position:absolute;top:0;left:0;right:0;height:calc(180px*var(--k));background:linear-gradient(180deg,rgba(12,35,24,.62),rgba(12,35,24,0));z-index:1}
 .foto-etq{position:absolute;top:calc(52px*var(--k));left:calc(52px*var(--k));font-size:calc(19px*var(--k));letter-spacing:.28em;text-transform:uppercase;color:rgba(241,236,230,.7);z-index:2}
 .franja{position:absolute;left:0;right:0;bottom:0;background:rgba(12,35,24,.88);padding:calc(38px*var(--k)) calc(52px*var(--k));z-index:2}
 .franja p{font-family:var(--serif);font-weight:300;font-size:calc(30px*var(--k));color:var(--crema);line-height:1.35}
@@ -128,7 +131,9 @@ h1.portada{font-family:var(--serif);font-weight:400;font-size:calc(96px*var(--k)
 
 /* P5 inversión */
 .alcance{font-size:calc(24px*var(--k));font-weight:300;color:var(--arena)}
-table{width:100%;border-collapse:collapse;margin-top:calc(26px*var(--k))}
+table{width:100%;border-collapse:collapse;margin-top:calc(26px*var(--k));--dt:1}
+table td{font-size:calc(24px*var(--k)*var(--dt))!important;padding:calc(13px*var(--k)*var(--dt)) 0!important}
+table tr.grupo td{font-size:calc(19px*var(--k)*var(--dt))!important;padding:calc(26px*var(--k)*var(--dt)) 0 calc(4px*var(--k)*var(--dt))!important}
 td{font-size:calc(24px*var(--k));padding:calc(13px*var(--k)) 0;border-bottom:1px solid rgba(200,188,168,.24);vertical-align:top}
 td.desc{width:64%}
 td.cant{width:12%;text-align:center;color:rgba(241,236,230,.68)}
@@ -137,7 +142,7 @@ tr.grupo td{font-size:calc(19px*var(--k));letter-spacing:.24em;text-transform:up
 tr.grupo:first-child td{padding-top:0}
 .total-lista{display:flex;justify-content:space-between;font-size:calc(24px*var(--k));color:rgba(241,236,230,.66);margin-top:calc(26px*var(--k));font-variant-numeric:tabular-nums}
 .total-big{margin-top:calc(34px*var(--k));padding:calc(30px*var(--k)) 0}
-.total-big .n{font-family:var(--serif);font-weight:300;font-size:calc(var(--tt,72px)*var(--k));line-height:.92;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.total-big .n{font-family:var(--serif);font-weight:300;font-size:calc(var(--tt,72px)*var(--k)*var(--dn,1));line-height:.92;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
 .total-big .l{font-size:calc(20px*var(--k));letter-spacing:.2em;text-transform:uppercase;color:var(--arena);margin-top:calc(14px*var(--k))}
 .cuotas{font-size:calc(22px*var(--k));font-weight:300;color:rgba(241,236,230,.7);margin-top:calc(22px*var(--k))}
 
@@ -192,7 +197,7 @@ tr.grupo:first-child td{padding-top:0}
   <details>
     <summary>1 · Portada</summary>
     <label>Título — máx. 8 palabras, afirma un beneficio</label>
-    <textarea id="f_titulo" data-t>El frente que se ve cuidado todo el año.</textarea>
+    <textarea id="f_titulo" data-t>Un frente cuidado todo el año.</textarea>
     <div class="hint" id="qa_titulo"></div>
     <div class="drop" onclick="pick('portada')" id="drop_portada">Foto de obra propia para la portada</div>
     <div class="row"><div><label>Encuadre H</label><input type="range" id="f_portada_x" min="0" max="100" value="50" data-t></div>
@@ -314,7 +319,6 @@ Facturación A o B: avisar al confirmar.</textarea>
       <div style="height:calc(46px*var(--k))"></div>
       <div class="ident" id="p_ident"></div>
       <div class="zocalo">Vivero propio desde 2008 · Paisajismo desde 2026</div>
-      <div style="height:calc(78px*var(--k))"></div>
     </div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
@@ -333,7 +337,6 @@ Facturación A o B: avisar al confirmar.</textarea>
       <div class="cifra"><div class="n" id="p_c2n"></div><div class="u" id="p_c2u"></div></div>
       <div class="cifra"><div class="n" id="p_c3n"></div><div class="u" id="p_c3u"></div></div>
     </div>
-    <div style="height:calc(72px*var(--k))"></div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
 
@@ -344,7 +347,6 @@ Facturación A o B: avisar al confirmar.</textarea>
     <h2 class="tit" id="p_prop_tit"></h2>
     <div style="height:calc(40px*var(--k))"></div>
     <div id="p_sectores"></div>
-    <div style="height:calc(72px*var(--k))"></div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
 
@@ -365,7 +367,6 @@ Facturación A o B: avisar al confirmar.</textarea>
     <div class="total-big"><div class="n" id="p_total"></div><div class="l" id="p_total_lbl"></div></div>
     <div class="cuotas" id="p_cuotas"></div>
     <div class="grow"></div>
-    <div style="height:calc(72px*var(--k))"></div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
 
@@ -379,7 +380,6 @@ Facturación A o B: avisar al confirmar.</textarea>
     </div>
     <div class="grow"></div>
     <div class="terminos" id="p_terminos"></div>
-    <div style="height:calc(72px*var(--k))"></div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
 
@@ -392,7 +392,6 @@ Facturación A o B: avisar al confirmar.</textarea>
     <div class="grow"></div>
     <div class="gracias" id="p_gracias"></div>
     <div class="marca" style="font-size:calc(30px*var(--k))">Paisajismo 212<span style="font-size:calc(12px*var(--k))">Vivero 212</span></div>
-    <div style="height:calc(78px*var(--k))"></div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
 
@@ -595,6 +594,13 @@ function render(){
   $("p_total").textContent = money(conDesc);
   $("p_total_lbl").textContent = "Total con transferencia o efectivo";
   $("p_cuotas").textContent = txt($("f_cuotas").value);
+
+  // densidad de la tabla segun cantidad de filas, y del total segun largo del numero
+  const filas = items.length;
+  const dt = filas<=9 ? 1 : filas<=13 ? .86 : filas<=17 ? .74 : .64;
+  $("p_tabla").style.setProperty("--dt", dt);
+  const largo = $("p_total").textContent.length;
+  $("p_total").parentElement.style.setProperty("--dn", largo<=10 ? 1 : largo<=12 ? .88 : .78);
 
   const li = s => s.split("\n").map(txt).filter(Boolean).slice(0,4).map(x=>`<li>${esc(x)}</li>`).join("");
   $("p_incluido").innerHTML = li($("f_incluido").value);
