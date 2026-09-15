@@ -49,11 +49,9 @@ button{font-family:var(--sans);cursor:pointer;border:none;border-radius:3px;font
 input[type=range]{width:100%;accent-color:#3E6B52}
 .qa{font-size:11.5px;line-height:1.65}
 .qa .fail{color:#D98A5A}.qa .pass{color:#6FA383}
-.fmt-sel{display:flex;gap:6px;margin-top:8px}
-.fmt-sel button{flex:1;background:#2C2C2A;color:#8A8A85;border:1px solid #3C3C3A;font-size:11px;padding:7px 4px}
-.fmt-sel button.on{background:#3E6B52;color:#fff;border-color:#3E6B52}
+.mini-prev{width:100%;height:96px;object-fit:cover;border-radius:3px;margin-top:8px;display:none;background:#1A1A18}
 
-/* ============ FORMATOS ============ */
+/* ============ FORMATO ============ */
 .fmt-wa .page{--pw:1080px;--ph:1440px;--k:.9;--mg:76px}
 .fmt-st .page{--pw:1080px;--ph:1920px;--k:1;--mg:86px}
 .fmt-a4 .page{--pw:1240px;--ph:1754px;--k:.76;--mg:104px}
@@ -76,7 +74,7 @@ input[type=range]{width:100%;accent-color:#3E6B52}
 .crema .etq{color:#6E7F6E}
 .noche .etq,.verde .etq,.sangre .etq{color:var(--arena)}
 .filete{height:1px;background:currentColor;opacity:.22;margin:calc(20px*var(--k)) 0 calc(34px*var(--k))}
-h2.tit{font-family:var(--serif);font-weight:400;font-size:calc(70px*var(--k));line-height:1.14;letter-spacing:-.015em;max-width:80%}
+h2.tit{font-family:var(--serif);font-weight:400;font-size:calc(70px*var(--k));line-height:1.14;letter-spacing:-.015em;max-width:86%}
 .bajada{font-weight:300;font-size:calc(29px*var(--k));line-height:1.5;max-width:60ch;margin-top:calc(22px*var(--k))}
 .pie{position:absolute;left:var(--mg);right:var(--mg);bottom:calc(46px*var(--k));font-size:calc(18px*var(--k));font-weight:300;display:flex;justify-content:space-between;padding-top:calc(16px*var(--k))}
 .crema .pie{color:#5A6659;border-top:1px solid rgba(12,35,24,.14)}
@@ -92,22 +90,33 @@ h2.tit{font-family:var(--serif);font-weight:400;font-size:calc(70px*var(--k));li
 .portada-foto img{width:100%;height:100%;object-fit:cover;display:block}
 .portada-velo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,35,24,.82) 0%,rgba(12,35,24,.42) 34%,rgba(12,35,24,.90) 76%,rgba(12,35,24,.97) 100%)}
 .portada-cont{position:relative;z-index:2;display:flex;flex-direction:column;height:100%}
-h1.portada{font-family:var(--serif);font-weight:400;font-size:calc(96px*var(--k));line-height:1.05;letter-spacing:-.022em;max-width:92%}
+h1.portada{font-family:var(--serif);font-weight:400;font-size:calc(96px*var(--k));line-height:1.05;letter-spacing:-.022em;max-width:94%}
 .ident{font-size:calc(25px*var(--k));font-weight:300;line-height:1.6;color:rgba(241,236,230,.85)}
 .zocalo{font-size:calc(18px*var(--k));letter-spacing:.15em;text-transform:uppercase;color:var(--arena);margin-top:calc(26px*var(--k))}
 
 /* P2 lo que vimos */
 .vimos-foto{width:100%;height:calc(var(--ph) * .34);overflow:hidden;background:#DCD6CE;margin-bottom:calc(30px*var(--k));position:relative}
 .vimos-foto img{width:100%;height:100%;object-fit:cover;display:block}
-.vimos-foto .cap{position:absolute;left:0;bottom:0;background:rgba(12,35,24,.82);color:var(--crema);font-size:calc(18px*var(--k));letter-spacing:.16em;text-transform:uppercase;padding:calc(10px*var(--k)) calc(18px*var(--k))}
+.vimos-foto .cap{position:absolute;left:0;bottom:0;background:rgba(12,35,24,.82);color:var(--crema);font-size:calc(18px*var(--k));letter-spacing:.16em;text-transform:uppercase;padding:calc(10px*var(--k)) calc(18px*var(--k));z-index:2}
 .vacia{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9A9186;font-size:calc(22px*var(--k));font-weight:300}
 .obs{margin-top:calc(6px*var(--k))}
 .obs li{list-style:none;font-size:calc(27px*var(--k));font-weight:300;line-height:1.45;padding:calc(13px*var(--k)) 0 calc(13px*var(--k)) calc(30px*var(--k));position:relative;border-top:1px solid rgba(12,35,24,.12)}
 .obs li:first-child{border-top:none}
 .obs li::before{content:"";position:absolute;left:0;top:calc(26px*var(--k));width:calc(14px*var(--k));height:1px;background:var(--arena)}
-.cifras{display:flex;gap:calc(62px*var(--k));border-top:1px solid rgba(12,35,24,.14);padding-top:calc(30px*var(--k));margin-top:calc(24px*var(--k))}
-.cifra .n{font-family:var(--serif);font-weight:300;font-size:calc(126px*var(--k));line-height:.88;letter-spacing:-.03em}
-.cifra .u{font-size:calc(19px*var(--k));letter-spacing:.14em;text-transform:uppercase;color:#6E7F6E;margin-top:calc(12px*var(--k))}
+
+/* cifras: grilla de 3 columnas iguales — no se corren aunque la unidad ocupe 2 renglones */
+.cifras{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:calc(28px*var(--k));
+  border-top:1px solid rgba(12,35,24,.14);padding-top:calc(30px*var(--k));margin-top:calc(24px*var(--k));
+  align-items:start;
+}
+.cifra{min-width:0}
+.cifra .n{font-family:var(--serif);font-weight:300;font-size:calc(118px*var(--k));line-height:.88;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.cifra .u{
+  font-size:calc(19px*var(--k));letter-spacing:.14em;text-transform:uppercase;color:#6E7F6E;
+  margin-top:calc(12px*var(--k));line-height:1.35;min-height:calc(52px*var(--k));
+  overflow-wrap:break-word;
+}
 
 /* P3 sectores */
 #p_sectores{flex:1 1 auto;display:flex;flex-direction:column;justify-content:space-evenly;min-height:0}
@@ -117,29 +126,39 @@ h1.portada{font-family:var(--serif);font-weight:400;font-size:calc(96px*var(--k)
 .sector .acc{font-family:var(--serif);font-weight:400;font-size:calc(40px*var(--k));line-height:1.24;margin-top:calc(12px*var(--k));max-width:90%}
 .sector .esp{font-size:calc(24px*var(--k));font-weight:300;color:#4C5A4C;margin-top:calc(12px*var(--k))}
 
-/* P4 imagen a sangre */
+/* P4 imágenes a sangre (una página por foto) */
 .marco{position:absolute;inset:0;overflow:hidden;background:#16261C}
 .marco img{width:100%;height:100%;object-fit:cover;display:block}
 .marco .vacia{position:absolute;inset:0;color:#4A5A4C}
 .foto-etq{position:absolute;top:calc(52px*var(--k));left:calc(52px*var(--k));font-size:calc(19px*var(--k));letter-spacing:.28em;text-transform:uppercase;color:rgba(241,236,230,.7);z-index:2}
 .franja{position:absolute;left:0;right:0;bottom:0;background:rgba(12,35,24,.88);padding:calc(38px*var(--k)) calc(52px*var(--k));z-index:2}
 .franja p{font-family:var(--serif);font-weight:300;font-size:calc(30px*var(--k));color:var(--crema);line-height:1.35}
-.franja small{display:block;font-family:var(--sans);font-size:calc(20px*var(--k));font-weight:300;color:var(--arena);line-height:1.5;margin-top:calc(14px*var(--k));max-width:70ch}
 
 /* P5 inversión */
 .alcance{font-size:calc(24px*var(--k));font-weight:300;color:var(--arena)}
-table{width:100%;border-collapse:collapse;margin-top:calc(26px*var(--k))}
-td{font-size:calc(24px*var(--k));padding:calc(13px*var(--k)) 0;border-bottom:1px solid rgba(200,188,168,.24);vertical-align:top}
+table{width:100%;border-collapse:collapse;margin-top:calc(24px*var(--k))}
+td{font-size:calc(23px*var(--k));padding:calc(11px*var(--k)) 0;border-bottom:1px solid rgba(200,188,168,.24);vertical-align:top}
 td.desc{width:64%}
 td.cant{width:12%;text-align:center;color:rgba(241,236,230,.68)}
 td.mon{text-align:right;font-variant-numeric:tabular-nums}
-tr.grupo td{font-size:calc(19px*var(--k));letter-spacing:.24em;text-transform:uppercase;color:var(--arena);border-bottom:none;padding:calc(26px*var(--k)) 0 calc(4px*var(--k))}
+tr.grupo td{font-size:calc(19px*var(--k));letter-spacing:.24em;text-transform:uppercase;color:var(--arena);border-bottom:none;padding:calc(22px*var(--k)) 0 calc(4px*var(--k))}
 tr.grupo:first-child td{padding-top:0}
-.total-lista{display:flex;justify-content:space-between;font-size:calc(24px*var(--k));color:rgba(241,236,230,.66);margin-top:calc(26px*var(--k));font-variant-numeric:tabular-nums}
-.total-big{margin-top:calc(34px*var(--k));padding:calc(30px*var(--k)) 0}
-.total-big .n{font-family:var(--serif);font-weight:300;font-size:calc(var(--tt,72px)*var(--k));line-height:.92;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.total-lista{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:calc(30px*var(--k));font-weight:300;color:rgba(241,236,230,.82);
+  margin-top:calc(26px*var(--k));font-variant-numeric:tabular-nums;
+}
+.total-lista .lbl{font-size:calc(22px*var(--k));letter-spacing:.14em;text-transform:uppercase;color:var(--arena)}
+.total-big{margin-top:calc(24px*var(--k));padding:calc(22px*var(--k)) 0 calc(18px*var(--k));border-top:1px solid rgba(200,188,168,.24)}
+.total-big .n{font-family:var(--serif);font-weight:300;font-size:calc(var(--tt,58px)*var(--k));line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .total-big .l{font-size:calc(20px*var(--k));letter-spacing:.2em;text-transform:uppercase;color:var(--arena);margin-top:calc(14px*var(--k))}
-.cuotas{font-size:calc(22px*var(--k));font-weight:300;color:rgba(241,236,230,.7);margin-top:calc(22px*var(--k))}
+.cuotas{font-size:calc(22px*var(--k));font-weight:300;color:rgba(241,236,230,.7);margin-top:calc(16px*var(--k));max-width:74ch}
+
+/* términos (ahora al pie de Inversión) */
+.terminos{border-top:1px solid rgba(200,188,168,.24);padding-top:calc(22px*var(--k));margin-bottom:calc(16px*var(--k))}
+.terminos p{font-size:calc(21px*var(--k));font-weight:300;line-height:1.6;color:rgba(241,236,230,.72)}
+.crema .terminos{border-top:1px solid rgba(12,35,24,.14)}
+.crema .terminos p{color:#4C5A4C}
 
 /* P6 alcance */
 .cols{display:flex;gap:calc(56px*var(--k))}
@@ -148,13 +167,18 @@ tr.grupo:first-child td{padding-top:0}
 .cols li{list-style:none;font-size:calc(25px*var(--k));font-weight:300;line-height:1.42;padding:calc(11px*var(--k)) 0 calc(11px*var(--k)) calc(32px*var(--k));position:relative}
 .cols .inc li::before{content:"✓";position:absolute;left:0;color:#7E8E6E}
 .cols .noinc li::before{content:"–";position:absolute;left:0;color:var(--arena)}
-.terminos{border-top:1px solid rgba(12,35,24,.14);padding-top:calc(26px*var(--k))}
-.terminos p{font-size:calc(23px*var(--k));font-weight:300;line-height:1.7;color:#4C5A4C}
 
 /* P7 cierre */
-.paso{border:1px solid rgba(200,188,168,.38);padding:calc(30px*var(--k)) calc(36px*var(--k));margin-top:calc(34px*var(--k));max-width:84%}
+.paso{
+  border:1px solid rgba(200,188,168,.38);border-radius:calc(18px*var(--k));
+  padding:calc(30px*var(--k)) calc(38px*var(--k));margin-top:calc(34px*var(--k));max-width:84%;
+}
 .paso p{font-size:calc(28px*var(--k));line-height:1.4}
-.gracias{font-size:calc(24px*var(--k));font-weight:300;color:rgba(241,236,230,.75);max-width:66%;line-height:1.5;margin-bottom:calc(30px*var(--k))}
+.gracias{
+  font-size:calc(24px*var(--k));font-weight:300;color:rgba(241,236,230,.75);
+  max-width:100%;line-height:1.55;margin-bottom:calc(30px*var(--k));
+  overflow-wrap:break-word;
+}
 
 @media print{
   body{display:block;background:#fff}
@@ -171,7 +195,7 @@ tr.grupo:first-child td{padding-top:0}
 
 <div id="panel">
   <h1>Generador de presupuestos</h1>
-  <div class="sub">Paisajismo 212 · 7 páginas</div>
+  <div class="sub" id="sub_pag">Paisajismo 212</div>
 
   <button class="btn-main" onclick="window.print()">Descargar PDF</button>
   <div class="acciones">
@@ -186,17 +210,23 @@ tr.grupo:first-child td{padding-top:0}
     <label>Pegá acá lo que anotaste en la ficha</label>
     <textarea id="f_contexto" style="min-height:110px" placeholder="Tipo de espacio, qué se encontró, objetivo, sectores, especies, técnicas…"></textarea>
     <button class="btn-mini" style="margin-top:8px;width:100%" onclick="redactarTextos()">Redactar el presupuesto</button>
-    <div class="hint" id="hint_red">Completa los textos de las 7 páginas. Después los corregís.</div>
+    <div class="hint" id="hint_red">Completa los textos de las páginas. Después los corregís.</div>
   </details>
 
   <details>
     <summary>1 · Portada</summary>
-    <label>Título — máx. 8 palabras, afirma un beneficio</label>
-    <textarea id="f_titulo" data-t>El frente que se ve cuidado todo el año.</textarea>
+    <label>Título — máx. 8 palabras. Enter corta el renglón</label>
+    <textarea id="f_titulo" data-t>El frente que se ve cuidado
+todo el año.</textarea>
     <div class="hint" id="qa_titulo"></div>
     <div class="drop" onclick="pick('portada')" id="drop_portada">Foto de obra propia para la portada</div>
-    <div class="row"><div><label>Encuadre H</label><input type="range" id="f_portada_x" min="0" max="100" value="50" data-t></div>
-    <div><label>Encuadre V</label><input type="range" id="f_portada_y" min="0" max="100" value="50" data-t></div></div>
+    <img class="mini-prev" id="mini_portada">
+    <div class="row">
+      <div><label>Mover ←→</label><input type="range" id="f_portada_x" min="0" max="100" value="50" data-t></div>
+      <div><label>Mover ↑↓</label><input type="range" id="f_portada_y" min="0" max="100" value="50" data-t></div>
+    </div>
+    <label>Acercar</label><input type="range" id="f_portada_z" min="100" max="260" value="100" data-t>
+    <div class="hint">Acercá un poco y los dos controles de movimiento pasan a tener efecto.</div>
     <label>Cliente</label><input type="text" id="f_cliente" data-t value="Familia Demian">
     <div class="row">
       <div><label>Dirección</label><input type="text" id="f_direccion" data-t value="210 y Aragón"></div>
@@ -207,11 +237,16 @@ tr.grupo:first-child td{padding-top:0}
 
   <details>
     <summary>2 · Lo que vimos</summary>
-    <label>Título de página</label>
-    <textarea id="f_diag_tit" data-t>Leímos el espacio antes de proponer.</textarea>
+    <label>Título de página — Enter corta el renglón</label>
+    <textarea id="f_diag_tit" data-t>Leímos el espacio
+antes de proponer.</textarea>
     <div class="drop" onclick="pick('vimos')" id="drop_vimos">Foto del estado actual (de la visita)</div>
-    <div class="row"><div><label>Encuadre H</label><input type="range" id="f_vimos_x" min="0" max="100" value="50" data-t></div>
-    <div><label>Encuadre V</label><input type="range" id="f_vimos_y" min="0" max="100" value="50" data-t></div></div>
+    <img class="mini-prev" id="mini_vimos">
+    <div class="row">
+      <div><label>Mover ←→</label><input type="range" id="f_vimos_x" min="0" max="100" value="50" data-t></div>
+      <div><label>Mover ↑↓</label><input type="range" id="f_vimos_y" min="0" max="100" value="50" data-t></div>
+    </div>
+    <label>Acercar</label><input type="range" id="f_vimos_z" min="100" max="260" value="100" data-t>
     <label>Observaciones — una por línea, máx. 3</label>
     <textarea id="f_obs" data-t style="min-height:86px">El frente recibe sol pleno todo el día y el suelo drena mal contra el muro.
 Los canteros existentes perdieron borde y la tierra se escurre a la vereda.
@@ -227,27 +262,24 @@ La vista desde el living da directo sobre el sector más descuidado.</textarea>
 
   <details>
     <summary>3 · La propuesta</summary>
-    <label>Título</label><textarea id="f_prop_tit" data-t>Tres sectores, una sola jornada.</textarea>
+    <label>Título — Enter corta el renglón</label>
+    <textarea id="f_prop_tit" data-t>Tres sectores,
+una sola jornada.</textarea>
     <div id="sectores"></div>
     <button class="btn-mini" style="margin-top:10px" onclick="addSector()">+ Agregar sector</button>
   </details>
 
-  <details>
-    <summary>4 · Imagen de referencia</summary>
-    <div class="drop" onclick="pick('ref')" id="drop_ref">Foto de referencia</div>
-    <div class="row"><div><label>Encuadre H</label><input type="range" id="f_ref_x" min="0" max="100" value="50" data-t></div>
-    <div><label>Encuadre V</label><input type="range" id="f_ref_y" min="0" max="100" value="50" data-t></div></div>
-    <label>Epígrafe</label>
-    <textarea id="f_foto_epi" data-t>Así se ve este esquema de plantación una vez desarrollado.</textarea>
-    <label>Aclaración de etapa — se imprime siempre</label>
-    <textarea id="f_foto_nota" data-t>La imagen muestra las especies en desarrollo pleno. Los ejemplares que entregamos parten de un porte intermedio y alcanzan este volumen con el crecimiento de las primeras temporadas.</textarea>
-    <div class="hint">Deja dicho por escrito lo que hoy se explica de palabra en la visita.</div>
+  <details open>
+    <summary>4 · Imágenes de referencia</summary>
+    <div class="hint">Cada imagen es una página. Podés sumar las que necesites.</div>
+    <div id="refs"></div>
+    <button class="btn-mini" style="margin-top:10px" onclick="addRef()">+ Agregar imagen</button>
   </details>
 
   <details>
     <summary>5 · Inversión</summary>
     <label>Línea de alcance — va antes del número</label>
-    <input type="text" id="f_alcance" data-t value="Proyecto integral · 1 jornada · llave en mano">
+    <input type="text" id="f_alcance" data-t value="Proyecto integral · 1 jornada de ejecución">
     <div class="drop" onclick="document.getElementById('f_excel').click()" id="drop_excel">Importar ítems desde una foto del Excel</div>
     <input type="file" id="f_excel" accept="image/*" style="display:none" onchange="importarItems(event)">
     <label>Endpoint del generador (Vercel)</label>
@@ -259,15 +291,19 @@ La vista desde el living da directo sobre el sector más descuidado.</textarea>
 
     <label>Total lista — vacío = suma automática</label>
     <input type="text" id="f_total_lista" data-t placeholder="se calcula solo" value="">
-    <label>Total con transferencia o efectivo</label>
+    <label>Total con descuento</label>
     <input type="text" id="f_total_desc" data-t placeholder="se calcula con el 20%" value="">
     <div class="hint">Escribí el número que quieras. El porcentaje no se imprime.</div>
-    <label>Términos de pago (una línea)</label>
-    <input type="text" id="f_cuotas" data-t value="3 cuotas sin interés con los principales bancos">
+    <label>Medios de pago (una línea)</label>
+    <input type="text" id="f_cuotas" data-t value="Con efectivo, transferencia y 3 cuotas sin interés con Visa o Master.">
+    <label>Términos — tres líneas, se imprimen al pie de esta página</label>
+    <textarea id="f_terminos" data-t style="min-height:80px">Plazo de ejecución: una jornada, coordinada con 7 días de anticipación.
+Reserva: 50% para congelar valores y agendar fecha. Saldo al terminar.
+Facturación A o B: avisar al confirmar.</textarea>
   </details>
 
   <details>
-    <summary>6 · Alcance y términos</summary>
+    <summary>6 · Alcance</summary>
     <label>Incluido — uno por línea, máx. 4</label>
     <textarea id="f_incluido" data-t style="min-height:86px">Provisión de todos los ejemplares
 Preparación del espacio y aporte de sustrato
@@ -278,18 +314,16 @@ Colocación final y limpieza del sector</textarea>
 Retiro de escombros y volquete
 Iluminación exterior y trabajo eléctrico
 Reposición de ejemplares posterior a la entrega</textarea>
-    <label>Términos — tres líneas</label>
-    <textarea id="f_terminos" data-t style="min-height:80px">Plazo de ejecución: una jornada, coordinada con 7 días de anticipación.
-Reserva: 50% para congelar valores y agendar fecha. Saldo al terminar.
-Facturación A o B: avisar al confirmar.</textarea>
   </details>
 
   <details>
     <summary>7 · Cierre</summary>
-    <label>Título</label><textarea id="f_cierre_tit" data-t>Cuando digas que sí, agendamos la fecha.</textarea>
+    <label>Título — Enter corta el renglón</label>
+    <textarea id="f_cierre_tit" data-t>Cuando digas que sí,
+agendamos la fecha.</textarea>
     <label>Siguiente paso — uno solo, con verbo</label>
     <input type="text" id="f_paso" data-t value="Confirmás por WhatsApp y agendamos la jornada.">
-    <label>Agradecimiento — una línea, con nombre propio</label>
+    <label>Agradecimiento — Enter corta el renglón</label>
     <textarea id="f_gracias" data-t>Gracias por abrirnos la puerta de tu casa, Demian. Quedamos atentos.</textarea>
   </details>
 
@@ -348,12 +382,8 @@ Facturación A o B: avisar al confirmar.</textarea>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
 
-  <!-- P4 -->
-  <section class="page sangre">
-    <div class="marco"><img id="p_ref" style="display:none"><div class="vacia" id="p_ref_vacia">Sin foto de referencia</div></div>
-    <div class="foto-etq">Imagen de referencia</div>
-    <div class="franja"><p id="p_foto_epi"></p><small id="p_foto_nota"></small></div>
-  </section>
+  <!-- P4 · una página por imagen de referencia -->
+  <div id="refPages"></div>
 
   <!-- P5 -->
   <section class="page noche">
@@ -361,24 +391,24 @@ Facturación A o B: avisar al confirmar.</textarea>
     <div class="filete"></div>
     <div class="alcance" id="p_alcance"></div>
     <table id="p_tabla"></table>
-    <div class="total-lista"><span>Total lista</span><span id="p_lista"></span></div>
-    <div class="total-big"><div class="n" id="p_total"></div><div class="l" id="p_total_lbl"></div></div>
+    <div class="total-lista"><span class="lbl">Total lista</span><span id="p_lista"></span></div>
+    <div class="total-big"><div class="n" id="p_total"></div><div class="l">Total con descuento</div></div>
     <div class="cuotas" id="p_cuotas"></div>
     <div class="grow"></div>
-    <div style="height:calc(72px*var(--k))"></div>
+    <div class="terminos" id="p_terminos"></div>
+    <div style="height:calc(52px*var(--k))"></div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
 
   <!-- P6 -->
   <section class="page crema">
-    <div class="etq">Alcance y términos</div>
+    <div class="etq">Alcance</div>
     <div class="filete"></div>
     <div class="cols">
       <div><h3>Incluido</h3><ul class="inc" id="p_incluido"></ul></div>
       <div><h3>No incluido</h3><ul class="noinc" id="p_noincluido"></ul></div>
     </div>
     <div class="grow"></div>
-    <div class="terminos" id="p_terminos"></div>
     <div style="height:calc(72px*var(--k))"></div>
     <div class="pie"><span>223 512-8743 · paisajismo@vivero212.com.ar</span><span>11 de Septiembre 8994 (esq. 212)</span></div>
   </section>
@@ -413,13 +443,17 @@ let items = [
   {grupo:"Cantero del living", desc:"Bolsón de corteza", cant:"3", precio:39500},
   {grupo:"", desc:"Ejecución integral y logística", cant:"", precio:243800}
 ];
-let fotos = {portada:null, vimos:null, ref:null};
+let fotos = {portada:null, vimos:null};
+let refs = [{src:null, nombre:"", epi:"Así se ve este esquema de plantación una vez desarrollado.", x:50, y:50, z:100}];
 
 const $ = id => document.getElementById(id);
 const money = n => "$" + Math.round(n).toLocaleString("es-AR");
 const txt = s => (s||"").trim();
 const numOf = v => { const n = String(v||"").replace(/[^\d]/g,""); return n?parseInt(n,10):0; };
 const fmtNum = n => n ? Number(n).toLocaleString("es-AR") : "";
+const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+/* respeta los cortes de línea que escribís con Enter */
+const nl = s => esc(txt(s)).replace(/\r?\n/g,"<br>");
 
 function setSerif(fam){
   document.documentElement.style.setProperty("--serif", `"${fam}",Georgia,serif`);
@@ -427,9 +461,7 @@ function setSerif(fam){
   const extra = fam==="Fraunces" ? "Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500" : q+":wght@300;400;500";
   $("fontLink").href = "https://fonts.googleapis.com/css2?family="+extra+"&family=Inter:wght@300;400;500;600&display=swap";
 }
-function setTot(px){
-  document.documentElement.style.setProperty("--tt", px+"px");
-}
+function setTot(px){ document.documentElement.style.setProperty("--tt", px+"px"); }
 
 async function importarItems(e){
   const f = e.target.files[0]; if(!f) return;
@@ -483,7 +515,7 @@ async function redactarTextos(){
       sectores = c.sectores.map(x=>({nom:x.nombre||"", acc:x.accion||"", esp:x.especies||""}));
       pintarSectores();
     }
-    set("f_foto_epi", c.foto_epigrafe);
+    if(c.foto_epigrafe && refs[0]) { refs[0].epi = c.foto_epigrafe; pintarRefs(); }
     set("f_alcance", c.alcance_linea);
     set("f_cierre_tit", c.cierre_titulo);
     set("f_paso", c.siguiente_paso);
@@ -498,18 +530,7 @@ async function redactarTextos(){
   }
 }
 
-const esc = s => String(s||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
-
-/* formato */
-function setFmt(f){ f="wa";
-  document.body.className = "fmt-"+f;
-  $("pageRule").textContent = f==="a4" ? "@page{size:A4;margin:0}"
-    : f==="st" ? "@page{size:11.25in 20in;margin:0}"
-    : "@page{size:11.25in 15in;margin:0}";
-  escalar();
-}
-
-/* fotos */
+/* ============ fotos portada / vimos ============ */
 let pickTarget = null;
 function pick(t){
   pickTarget = t;
@@ -520,19 +541,35 @@ function pick(t){
 function onFile(e){
   const f = e.target.files[0]; if(!f) return;
   const r = new FileReader();
-  r.onload = ev => { fotos[pickTarget] = ev.target.result; $("drop_"+pickTarget).textContent = f.name; render(); };
+  r.onload = ev => {
+    fotos[pickTarget] = ev.target.result;
+    $("drop_"+pickTarget).textContent = f.name;
+    const mp = $("mini_"+pickTarget);
+    if(mp){ mp.src = ev.target.result; mp.style.display="block"; }
+    render();
+  };
   r.readAsDataURL(f);
+}
+/* encuadre real: object-position mueve el recorte, el zoom hace que los dos ejes tengan margen para moverse */
+function encuadrar(img, x, y, z){
+  img.style.objectPosition = x+"% "+y+"%";
+  img.style.transformOrigin = x+"% "+y+"%";
+  img.style.transform = "scale("+(z/100)+")";
 }
 function aplicarFoto(key, imgId, vaciaId){
   const img = $(imgId);
   if(fotos[key]){
-    img.src = fotos[key]; img.style.display="block";
-    img.style.objectPosition = $("f_"+key+"_x").value + "% " + $("f_"+key+"_y").value + "%";
+    if(img.getAttribute("src") !== fotos[key]) img.src = fotos[key];
+    img.style.display = "block";
+    encuadrar(img, $("f_"+key+"_x").value, $("f_"+key+"_y").value, $("f_"+key+"_z").value);
     if(vaciaId) $(vaciaId).style.display="none";
-  } else { img.style.display="none"; if(vaciaId) $(vaciaId).style.display="flex"; }
+  } else {
+    img.style.display="none";
+    if(vaciaId) $(vaciaId).style.display="flex";
+  }
 }
 
-/* panel dinámico */
+/* ============ panel dinámico ============ */
 function pintarSectores(){
   $("sectores").innerHTML = sectores.map((s,i)=>`
     <div class="card">
@@ -540,7 +577,7 @@ function pintarSectores(){
         <label style="margin:0">Sector ${i+1}</label><button class="del" onclick="delSector(${i})">×</button>
       </div>
       <input type="text" placeholder="Nombre" value="${esc(s.nom)}" oninput="sectores[${i}].nom=this.value;render()">
-      <label>Acción — voz activa, máx. 12 palabras</label>
+      <label>Acción — voz activa, máx. 12 palabras. Enter corta el renglón</label>
       <textarea oninput="sectores[${i}].acc=this.value;render()">${esc(s.acc)}</textarea>
       <label>Especies</label>
       <input type="text" value="${esc(s.esp)}" oninput="sectores[${i}].esp=this.value;render()">
@@ -548,6 +585,60 @@ function pintarSectores(){
 }
 function addSector(){ if(sectores.length>=3) return; sectores.push({nom:"",acc:"",esp:""}); pintarSectores(); render(); }
 function delSector(i){ sectores.splice(i,1); pintarSectores(); render(); }
+
+/* ---- imágenes de referencia (N páginas) ---- */
+function pintarRefs(){
+  $("refs").innerHTML = refs.map((r,i)=>`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <label style="margin:0">Imagen ${i+1}</label>
+        <button class="del" onclick="delRef(${i})" ${refs.length<=1?'style="opacity:.3"':''}>×</button>
+      </div>
+      <div class="drop" onclick="pickRef(${i})" id="drop_ref_${i}">${r.nombre? esc(r.nombre) : "Elegir foto"}</div>
+      ${r.src?`<img class="mini-prev" style="display:block" src="${r.src}">`:""}
+      <div class="row">
+        <div><label>Mover ←→</label><input type="range" min="0" max="100" value="${r.x}" oninput="refs[${i}].x=+this.value;aplicarRef(${i})"></div>
+        <div><label>Mover ↑↓</label><input type="range" min="0" max="100" value="${r.y}" oninput="refs[${i}].y=+this.value;aplicarRef(${i})"></div>
+      </div>
+      <label>Acercar</label>
+      <input type="range" min="100" max="260" value="${r.z}" oninput="refs[${i}].z=+this.value;aplicarRef(${i})">
+      <label>Epígrafe — dejalo vacío y no se imprime la franja</label>
+      <textarea oninput="refs[${i}].epi=this.value;pintarRefPages();render()">${esc(r.epi)}</textarea>
+    </div>`).join("");
+}
+function addRef(){ refs.push({src:null,nombre:"",epi:"",x:50,y:50,z:100}); pintarRefs(); pintarRefPages(); render(); }
+function delRef(i){ if(refs.length<=1) return; refs.splice(i,1); pintarRefs(); pintarRefPages(); render(); }
+let refTarget = null;
+function pickRef(i){
+  refTarget = i;
+  let inp = $("hidden_ref");
+  if(!inp){ inp=document.createElement("input"); inp.type="file"; inp.id="hidden_ref"; inp.accept="image/*"; inp.style.display="none";
+    inp.addEventListener("change", ev=>{
+      const f = ev.target.files[0]; if(!f) return;
+      const r = new FileReader();
+      r.onload = e2 => { refs[refTarget].src = e2.target.result; refs[refTarget].nombre = f.name; pintarRefs(); pintarRefPages(); render(); };
+      r.readAsDataURL(f);
+    });
+    document.body.appendChild(inp);
+  }
+  inp.value=""; inp.click();
+}
+function pintarRefPages(){
+  $("refPages").innerHTML = refs.map((r,i)=>`
+    <section class="page sangre">
+      <div class="marco">
+        ${r.src ? `<img id="refimg_${i}" src="${r.src}">` : `<div class="vacia">Sin foto de referencia</div>`}
+      </div>
+      <div class="foto-etq">Imagen de referencia${refs.length>1? " · "+(i+1)+"/"+refs.length : ""}</div>
+      ${txt(r.epi) ? `<div class="franja"><p>${nl(r.epi)}</p></div>` : ""}
+    </section>`).join("");
+  refs.forEach((r,i)=>aplicarRef(i));
+  $("sub_pag").textContent = "Paisajismo 212 · "+(6+refs.length)+" páginas";
+}
+function aplicarRef(i){
+  const img = $("refimg_"+i);
+  if(img) encuadrar(img, refs[i].x, refs[i].y, refs[i].z);
+}
 
 function pintarItems(){
   $("items").innerHTML = items.map((it,i)=>`
@@ -562,24 +653,22 @@ function pintarItems(){
 function addItem(){ items.push({grupo:"",desc:"",cant:"",precio:0}); pintarItems(); render(); }
 function delItem(i){ items.splice(i,1); pintarItems(); render(); }
 
-/* render */
+/* ============ render ============ */
 function render(){
-  $("p_titulo").textContent = txt($("f_titulo").value);
+  $("p_titulo").innerHTML = nl($("f_titulo").value);
   $("p_ident").innerHTML = [txt($("f_cliente").value), txt($("f_direccion").value)].filter(Boolean).join("<br>")
     + "<br>" + txt($("f_fecha").value) + " · Validez " + txt($("f_validez").value);
   aplicarFoto("portada","p_portada",null);
 
-  $("p_diag_tit").textContent = txt($("f_diag_tit").value);
+  $("p_diag_tit").innerHTML = nl($("f_diag_tit").value);
   aplicarFoto("vimos","p_vimos","p_vimos_vacia");
   $("p_obs").innerHTML = txt($("f_obs").value).split("\n").map(txt).filter(Boolean).slice(0,3).map(o=>`<li>${esc(o)}</li>`).join("");
   ["1","2","3"].forEach(i=>{ $("p_c"+i+"n").textContent = txt($("f_c"+i+"n").value); $("p_c"+i+"u").textContent = txt($("f_c"+i+"u").value); });
 
-  $("p_prop_tit").textContent = txt($("f_prop_tit").value);
-  $("p_sectores").innerHTML = sectores.map(s=>`<div class="sector"><div class="nom">${esc(s.nom)}</div><div class="acc">${esc(s.acc)}</div><div class="esp">${esc(s.esp)}</div></div>`).join("");
+  $("p_prop_tit").innerHTML = nl($("f_prop_tit").value);
+  $("p_sectores").innerHTML = sectores.map(s=>`<div class="sector"><div class="nom">${esc(s.nom)}</div><div class="acc">${nl(s.acc)}</div><div class="esp">${esc(s.esp)}</div></div>`).join("");
 
-  aplicarFoto("ref","p_ref","p_ref_vacia");
-  $("p_foto_epi").textContent = txt($("f_foto_epi").value);
-  $("p_foto_nota").textContent = txt($("f_foto_nota").value);
+  refs.forEach((r,i)=>aplicarRef(i));
 
   $("p_alcance").textContent = txt($("f_alcance").value);
   let html="", grupo=null, total=0;
@@ -593,23 +682,22 @@ function render(){
   const conDesc = numOf($("f_total_desc").value) || Math.round(lista*0.8);
   $("p_lista").textContent = money(lista);
   $("p_total").textContent = money(conDesc);
-  $("p_total_lbl").textContent = "Total con transferencia o efectivo";
   $("p_cuotas").textContent = txt($("f_cuotas").value);
+  $("p_terminos").innerHTML = txt($("f_terminos").value).split("\n").map(txt).filter(Boolean).map(x=>`<p>${esc(x)}</p>`).join("");
 
   const li = s => s.split("\n").map(txt).filter(Boolean).slice(0,4).map(x=>`<li>${esc(x)}</li>`).join("");
   $("p_incluido").innerHTML = li($("f_incluido").value);
   $("p_noincluido").innerHTML = li($("f_noincluido").value);
-  $("p_terminos").innerHTML = txt($("f_terminos").value).split("\n").map(txt).filter(Boolean).map(x=>`<p>${esc(x)}</p>`).join("");
 
-  $("p_cierre_tit").textContent = txt($("f_cierre_tit").value);
+  $("p_cierre_tit").innerHTML = nl($("f_cierre_tit").value);
   $("p_paso").textContent = txt($("f_paso").value);
-  $("p_gracias").textContent = txt($("f_gracias").value);
+  $("p_gracias").innerHTML = nl($("f_gracias").value);
 
   qa(numOf($("f_total_lista").value)||total); escalar();
 }
 
-/* QA */
-const PROHIBIDAS = ["apasionado","sueño","mágico","oasis","se propone","se sugiere","se realizará","aproximadamente","espacios que inspiran"];
+/* ============ QA ============ */
+const PROHIBIDAS = ["apasionado","sueño","mágico","oasis","se propone","se sugiere","se realizará","aproximadamente","espacios que inspiran","llave en mano"];
 function qa(total){
   const palTit = txt($("f_titulo").value).split(/\s+/).filter(Boolean).length;
   const palObs = txt($("f_obs").value).split(/\s+/).filter(Boolean).length;
@@ -619,10 +707,12 @@ function qa(total){
   $("qa_diag").textContent = palObs+" palabras"+(palObs<=45?"":" — máximo 45");
 
   const todo = (Array.from(document.querySelectorAll("[data-t]")).map(e=>e.value||"").join(" ")
-    + " " + sectores.map(s=>s.acc+" "+s.nom).join(" ")).toLowerCase();
+    + " " + sectores.map(s=>s.acc+" "+s.nom).join(" ")
+    + " " + refs.map(r=>r.epi).join(" ")).toLowerCase();
   const hall = PROHIBIDAS.filter(p=>todo.includes(p));
   const cifras = ["1","2","3"].filter(i=>txt($("f_c"+i+"n").value)).length;
   const desborde = Array.from(document.querySelectorAll(".page")).some(p=>p.scrollHeight > p.clientHeight+2);
+  const refsOk = refs.filter(r=>r.src).length;
 
   const checks = [
     [palTit<=8, "Título de portada en 8 palabras o menos"],
@@ -632,7 +722,7 @@ function qa(total){
     [sectores.length>0 && sectores.length<=3, "Entre 1 y 3 sectores"],
     [!!fotos.portada, "Foto de portada cargada"],
     [!!fotos.vimos, "Foto del estado actual cargada"],
-    [!!fotos.ref, "Foto de referencia cargada"],
+    [refsOk===refs.length, refsOk===refs.length? refsOk+" imagen(es) de referencia cargadas" : "Hay páginas de referencia sin foto"],
     [total>0, "La tabla tiene importes"],
     [txt($("f_paso").value).length>0, "Hay un único siguiente paso"],
     [!desborde, desborde? "Hay contenido que se sale de página" : "Ninguna página desborda"]
@@ -640,8 +730,8 @@ function qa(total){
   $("qa").innerHTML = checks.map(c=>`<div class="${c[0]?'pass':'fail'}">${c[0]?'✓':'✕'} ${c[1]}</div>`).join("");
 }
 
-/* persistencia */
-function estado(){ const o={sectores,items,fotos,fmt:document.body.className,campos:{}};
+/* ============ persistencia ============ */
+function estado(){ const o={sectores,items,fotos,refs,fmt:document.body.className,campos:{}};
   document.querySelectorAll("[data-t]").forEach(e=>o.campos[e.id]=e.value); return o; }
 function guardarCaso(){
   const b = new Blob([JSON.stringify(estado())],{type:"application/json"});
@@ -653,10 +743,14 @@ function abrirCaso(e){
   const r = new FileReader();
   r.onload = ev => { try{
       const o = JSON.parse(ev.target.result);
-      sectores = o.sectores||[]; items = o.items||[]; fotos = o.fotos||{portada:null,vimos:null,ref:null};
+      sectores = o.sectores||[]; items = o.items||[];
+      fotos = o.fotos||{portada:null,vimos:null};
+      refs = (o.refs && o.refs.length) ? o.refs : [{src:(o.fotos&&o.fotos.ref)||null,nombre:"",epi:(o.campos&&o.campos.f_foto_epi)||"",x:50,y:50,z:100}];
       Object.entries(o.campos||{}).forEach(([k,v])=>{ if($(k)) $(k).value=v; });
-      if(o.fmt) setFmt(o.fmt.replace("fmt-",""));
-      pintarSectores(); pintarItems(); render();
+      ["portada","vimos"].forEach(k=>{
+        const mp=$("mini_"+k); if(fotos[k]&&mp){ mp.src=fotos[k]; mp.style.display="block"; $("drop_"+k).textContent="Foto cargada"; }
+      });
+      pintarSectores(); pintarItems(); pintarRefs(); pintarRefPages(); render();
     }catch(err){ alert("El archivo no se pudo leer. Tiene que ser un caso guardado desde acá."); } };
   r.readAsText(f);
 }
@@ -672,10 +766,8 @@ Siguiente paso: ${$("f_paso").value}`;
   navigator.clipboard.writeText(t).then(()=>alert("Bloque copiado."),()=>prompt("Copiá:",t));
 }
 
-/* escala del preview */
+/* ============ escala del preview ============ */
 function escalar(){
-  const w = document.querySelector(".page").getBoundingClientRect().width /
-            (parseFloat(getComputedStyle(document.querySelector(".page")).getPropertyValue("--pw"))||1080);
   const base = parseFloat(getComputedStyle(document.querySelector(".page")).getPropertyValue("--pw"))||1080;
   const s = Math.min(1, ($("lienzo").clientWidth-40)/base);
   const wrap = $("wrap");
@@ -684,7 +776,8 @@ function escalar(){
 }
 document.querySelectorAll("[data-t]").forEach(e=>e.addEventListener("input", render));
 window.addEventListener("resize", escalar);
-setTot(72); setSerif("Playfair Display"); pintarSectores(); pintarItems(); render();
+setTot(58); setSerif("Playfair Display");
+pintarSectores(); pintarItems(); pintarRefs(); pintarRefPages(); render();
 </script>
 </body>
 </html>
