@@ -173,6 +173,7 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 .rep-btn { padding:8px 14px; font-size:13px; font-weight:600; border:none; border-radius:6px; cursor:pointer; color:#fff; }
 .rep-btn.aprobar { background:#856404; }
 .rep-btn.enviar { background:#1B4332; }
+.rep-btn.editar { background:#fff; color:#2D6A4F; border:1px solid #b7cdbe; }
 .rep-btn:disabled { opacity:.5; cursor:default; }
 </style>
 </head>
@@ -1278,30 +1279,38 @@ function recuperarDraft(){
   const empresa=g('r-nom');
   const draft=cargarDraft(empresa);
   if(!draft) return;
-  document.getElementById('r-cont').value=draft.contacto||'';
-  document.getElementById('r-fecha').value=draft.fecha||'';
-  document.getElementById('r-ubic').value=draft.ubicacion||'';
-  document.getElementById('r-cuit').value=draft.cuit||'';
-  document.getElementById('r-resp').value=draft.responsable||'Agustín';
-  (draft.bloqueA||[]).forEach((checked,i)=>{ const it=BLOQUE_A[i]; if(it){const c=document.getElementById(it.id); if(c) c.checked=checked;} });
-  (draft.bloqueB||[]).forEach((d,i)=>{
-    const it=BLOQUE_B[i]; if(!it) return;
-    const c=document.getElementById(it.id); if(!c) return;
-    c.checked=d.checked; toggleCampo(it.id);
-    if(it.custom) document.getElementById(it.id+'-titulo').value=d.titulo||'';
-    document.getElementById(it.id+'-dato').value=d.dato||'';
-  });
-  (draft.bloqueC||[]).forEach((d,i)=>{
-    const it=BLOQUE_C[i]; if(!it) return;
-    const c=document.getElementById(it.id); if(!c) return;
-    c.checked=d.checked; toggleCampo(it.id);
-    document.getElementById(it.id+'-dato').value=d.dato||'';
-  });
-  rFotos=draft.fotos||[];
-  renderFotosR();
+  aplicarDatosReporte(draft);
   document.getElementById('draft-banner').style.display='none';
   document.getElementById('r-st').className='status on';
   document.getElementById('r-st').textContent='✓ Borrador recuperado — revisá y volvé a generar el reporte.';
+}
+
+// Vuelca un objeto de datos (formato recopilarDatosReporte) al formulario de Mantenimiento.
+// Lo usan la recuperación de borrador local y la edición de un reporte desde la Bandeja.
+function aplicarDatosReporte(d){
+  if(!d) return;
+  if(d.empresa) document.getElementById('r-nom').value=d.empresa;
+  document.getElementById('r-cont').value=d.contacto||'';
+  document.getElementById('r-fecha').value=d.fecha||'';
+  document.getElementById('r-ubic').value=d.ubicacion||'';
+  document.getElementById('r-cuit').value=d.cuit||'';
+  document.getElementById('r-resp').value=d.responsable||'Agustín';
+  (d.bloqueA||[]).forEach((checked,i)=>{ const it=BLOQUE_A[i]; if(it){const c=document.getElementById(it.id); if(c) c.checked=checked;} });
+  (d.bloqueB||[]).forEach((x,i)=>{
+    const it=BLOQUE_B[i]; if(!it) return;
+    const c=document.getElementById(it.id); if(!c) return;
+    c.checked=x.checked; toggleCampo(it.id);
+    if(it.custom) document.getElementById(it.id+'-titulo').value=x.titulo||'';
+    document.getElementById(it.id+'-dato').value=x.dato||'';
+  });
+  (d.bloqueC||[]).forEach((x,i)=>{
+    const it=BLOQUE_C[i]; if(!it) return;
+    const c=document.getElementById(it.id); if(!c) return;
+    c.checked=x.checked; toggleCampo(it.id);
+    document.getElementById(it.id+'-dato').value=x.dato||'';
+  });
+  rFotos=d.fotos||[];
+  renderFotosR();
 }
 
 // ── Compartir por WhatsApp ────────────────────────────────────
@@ -1441,7 +1450,9 @@ async function runReporte(){
       trabajosEspecificos: bloqueB.map(x=>`${x.titulo}: ${x.dato}`).join(' | '),
       alertas: bloqueC.map(x=>`${x.titulo}: ${x.dato}`).join(' | '),
       cuit: g('r-cuit'),
-      textoIA, base64, filename: pdfFilename
+      textoIA, base64, filename: pdfFilename,
+      // datos para reconstruir el form al editar; sin fotos (base64 pesado, no entra en una celda)
+      datos: (function(){ const dd=recopilarDatosReporte(); dd.fotos=[]; return dd; })()
     };
     ultimoReportePDF={base64, filename:pdfFilename}; // para compartir el archivo por WhatsApp
 
@@ -1461,18 +1472,24 @@ async function subirReporteMantenimiento(){
   const uploadBtn=document.getElementById('r-upload-btn'), uploadSt=document.getElementById('r-upload-st'), wppBtn=document.getElementById('r-wpp-btn');
   if(!pendingReporteUpload){ uploadSt.className='status on err'; uploadSt.textContent='No hay un PDF generado todavía.'; return; }
   uploadBtn.disabled=true; uploadBtn.textContent='Subiendo...';
-  uploadSt.className='status on'; uploadSt.textContent='☁️ Subiendo a Drive y guardando en el CRM...';
+  const editando = modoEdicionReporte!=null;
+  uploadSt.className='status on'; uploadSt.textContent= editando ? '☁️ Actualizando el reporte y reemplazando el PDF...' : '☁️ Subiendo a Drive y guardando en el CRM...';
   try{
-    const res2=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(pendingReporteUpload)});
+    const payload={...pendingReporteUpload};
+    if(editando){ payload.action='actualizarReporte'; payload.fila=modoEdicionReporte; }
+    const res2=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
     const d2=await res2.json();
     if(!d2.ok) throw new Error(d2.msg||'Error al guardar en el CRM');
 
     ultimoReporteURL=d2.url;
     borrarDraft(g('r-nom'));
     uploadSt.className='status on';
-    uploadSt.textContent='✓ Reporte subido a Drive y guardado en el CRM.';
+    uploadSt.textContent= editando ? '✓ Reporte actualizado: se reemplazó el PDF y quedó en Borrador.' : '✓ Reporte subido a Drive y guardado en el CRM (queda en Borrador).';
     wppBtn.style.display='block';
+    const datosGuardar = pendingReporteUpload.datos, empresaGuardar = pendingReporteUpload.empresa;
     pendingReporteUpload=null;
+    if(editando){ modoEdicionReporte=null; }
+    else { persistirDatosReporte(empresaGuardar, datosGuardar); } // best-effort, para editarlo luego
   }catch(e){
     uploadSt.className='status on err';
     uploadSt.textContent='⚠️ No se pudo subir ('+e.message+'). Tocá "Subir" de nuevo cuando tengas señal.';
@@ -2453,6 +2470,7 @@ function cerrarSesion(){
 }
 
 let bandejaCache=[], bandejaFiltro='';
+let modoEdicionReporte=null; // fila del reporte en edición; null = reporte nuevo
 
 async function cargarBandeja(){
   const cont=document.getElementById('bandeja-list');
@@ -2493,9 +2511,10 @@ function renderBandeja(){
     const fecha=r.fechaVisita?fechaCorta(r.fechaVisita):'';
     const pdf=r.linkPDF?('<a href="'+esc(r.linkPDF)+'" target="_blank" rel="noopener">Ver PDF ↗</a>'):'<span style="color:#b0bdb4;font-size:12px">sin PDF</span>';
     let acciones='';
+    if(est==='Borrador') acciones+='<button class="rep-btn editar" onclick="editarReporte('+r.fila+')">Editar</button>';
     if(esAdmin){
-      if(est==='Borrador') acciones='<button class="rep-btn aprobar" onclick="cambiarEstado('+r.fila+',\'Aprobado\',this)">Aprobar</button>';
-      else if(est==='Aprobado') acciones='<button class="rep-btn enviar" onclick="cambiarEstado('+r.fila+',\'Enviado\',this)">Marcar enviado</button>';
+      if(est==='Borrador') acciones+='<button class="rep-btn aprobar" onclick="cambiarEstado('+r.fila+',\'Aprobado\',this)">Aprobar</button>';
+      else if(est==='Aprobado') acciones+='<button class="rep-btn enviar" onclick="cambiarEstado('+r.fila+',\'Enviado\',this)">Marcar enviado</button>';
     }
     return '<div class="rep-card">'+
       '<div class="rep-main"><div class="rep-emp">'+esc(r.empresa||'—')+'</div>'+
@@ -2525,6 +2544,41 @@ async function cambiarEstado(fila, nuevoEstado, btn){
 function fechaCorta(v){
   const d=new Date(v); if(isNaN(d)) return String(v);
   return d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+// ── Edición de un reporte existente (opción A: corregir y regenerar el PDF) ──
+// Trae los datos guardados del reporte, los vuelca al formulario de Mantenimiento y
+// deja el reporte "en edición": al volver a generar y subir, se ACTUALIZA la misma
+// fila y se reemplaza el PDF en Drive (no se crea un duplicado).
+async function editarReporte(fila){
+  try{
+    const res=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'leerReporte',fila})});
+    const d=await res.json();
+    if(!d.ok || !d.reporte){ alert(d.msg||'No se pudo abrir el reporte para editar.'); return; }
+    const r=d.reporte;
+    if(!r.datos){ alert('Este reporte se creó antes de la función de edición, así que no se puede reconstruir el formulario. Podés rehacerlo desde Mantenimiento y volver a subirlo.'); return; }
+    aplicarDatosReporte(r.datos);
+    modoEdicionReporte=fila;
+    switchTab('mantenimiento');
+    const st=document.getElementById('r-st'); st.className='status on';
+    st.textContent='✏️ Editando el reporte de '+((r.datos&&r.datos.empresa)||'')+'. Corregí lo que haga falta y volvé a generar el PDF; al subir se reemplaza el existente.';
+    try{ window.scrollTo(0,0); }catch(e){}
+  }catch(e){ alert('Error al abrir el reporte: '+e.message); }
+}
+
+// Guarda el JSON del reporte recién creado en su fila (best-effort), para poder editarlo
+// más adelante desde la Bandeja. No bloquea el flujo si falla.
+async function persistirDatosReporte(empresa, datos){
+  try{
+    const norm=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+    const res=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'listarReportes'})});
+    const d=await res.json();
+    if(!d.ok || !Array.isArray(d.reportes)) return;
+    const emp=norm(empresa);
+    const propio=d.reportes.filter(r=>norm(r.empresa)===emp).sort((a,b)=>b.fila-a.fila)[0];
+    if(!propio) return;
+    await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'guardarDatosReporte',fila:propio.fila,datos})});
+  }catch(e){ /* best-effort */ }
 }
 
 // Clona el logo del header dentro del gate de login (evita duplicar el base64).
