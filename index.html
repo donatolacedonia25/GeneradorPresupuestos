@@ -2102,7 +2102,7 @@ async function pdfRemito(){
 // presupuesto: header crema + logo real, franjas verdes de sección, nota en
 // caja celeste, footer como imagen. Interlineado 1.5, interletrado 6.
 // ══════════════════════════════════════════════════════════════════════════
-const MR_BODY = {font:'regular', size:16, lineHeight:1.5, tracking:6};
+const MR_BODY = {font:'regular', size:16, lineHeight:1.5, tracking:6, color:[12,35,24]};
 const MR_LABEL_SIZE = 15;
 
 function drawGreenHeaderReporte(doc){
@@ -2121,12 +2121,22 @@ async function pdfReporte(){
   const cuit=g('r-cuit');
   const fechaVisita=fechaES(g('r-fecha'));
 
-  // ── HEADER (franja crema fija, igual criterio que el presupuesto) ──
-  doc.setFillColor(...CREAM);
-  doc.rect(0,0,PW,TOP_H,'F');
-  drawText(doc, nombre.toUpperCase(), PMARGIN, 100, PCW-260, {font:'extrabold',size:28,lineHeight:1.5,tracking:6});
+  // ── HEADER (franja crema; alto dinámico según cuántas líneas ocupa el nombre,
+  //     para que un nombre largo no se superponga con Para/Fecha/Ubicación/CUIT) ──
+  const nombreUP = nombre.toUpperCase();
+  setStyle(doc,{font:'extrabold',size:28,lineHeight:1.5,tracking:6});
+  const nameLines = (doc.splitTextToSize(nombreUP, PCW-260).length || 1);
+  const nameLineH = 28*PX_PER_PT*1.5;
+  const nameTop = 100;
+  const hy0 = Math.max(145, nameTop + nameLines*nameLineH + 6);
+  const metaCount = [contacto,fechaVisita,ubic,cuit].filter(Boolean).length;
+  const headH = Math.max(TOP_H, hy0 + metaCount*28 + 24);
 
-  let hy=145;
+  doc.setFillColor(...CREAM);
+  doc.rect(0,0,PW,headH,'F');
+  drawText(doc, nombreUP, PMARGIN, nameTop, PCW-260, {font:'extrabold',size:28,lineHeight:1.5,tracking:6});
+
+  let hy=hy0;
   const hrow=(lbl,val)=>{
     if(!val) return;
     doc.setFont(FONT_MAP.bold,'normal');doc.setFontSize(MR_LABEL_SIZE);doc.setTextColor(...GREEN);
@@ -2134,7 +2144,7 @@ async function pdfReporte(){
     const charSpace=MR_LABEL_SIZE*PX_PER_PT*(6/1000);
     doc.text(lblTxt,PMARGIN,hy,{charSpace});
     const lw=doc.getTextWidth(lblTxt)+charSpace*lblTxt.length;
-    doc.setFont(FONT_MAP.regular,'normal');doc.setTextColor(50,50,50);
+    doc.setFont(FONT_MAP.regular,'normal');doc.setTextColor(12,35,24);
     doc.text(val,PMARGIN+lw,hy,{charSpace});
     hy+=28;
   };
@@ -2146,7 +2156,7 @@ async function pdfReporte(){
   try{ drawImageFit(doc,{data:LOGO_MANTENIMIENTO_ASSET,w:600,h:849}, PW-250, 40, 150, 190); }catch(e){}
 
   // ── CUERPO ──
-  let y=TOP_H+60;
+  let y=headH+40;
   const bodyW=PCW;
   const ensureSpace=(h)=>{
     if(y+h > PH-FOOTER_IMG_H-40){
@@ -2169,7 +2179,7 @@ async function pdfReporte(){
         const label=item.substring(0,ci).trim(), texto=item.substring(ci+1).trim();
         const h=measureLabeledItemHeight(doc,label,texto,bodyW);
         ensureSpace(h+24);
-        y=drawLabeledItem(doc,label,texto,PMARGIN,y,bodyW,{label:GREEN,text:[45,45,45]},24);
+        y=drawLabeledItem(doc,label,texto,PMARGIN,y,bodyW,{label:GREEN,text:[12,35,24]},24);
       }else{
         const style={...MR_BODY};
         const h=measureParagraphHeight(doc,'• '+item,bodyW,style);
@@ -2191,10 +2201,10 @@ async function pdfReporte(){
     const lines=doc.splitTextToSize(alerta,bodyW-70);
     const boxH=Math.max(76, 40+28+lines.length*lineH);
     ensureSpace(boxH+30);
-    doc.setFillColor(214,235,247);doc.setDrawColor(150,190,220);doc.setLineWidth(1);
+    doc.setFillColor(241,236,230);doc.setDrawColor(...GREEN);doc.setLineWidth(1.5);
     doc.roundedRect(PMARGIN,y,bodyW,boxH,10,10,'FD');
-    drawText(doc,'📍 Nota:',PMARGIN+24,y+34,null,{font:'bold',size:16,lineHeight:1.5,tracking:6,color:[20,80,120]});
-    drawText(doc,alerta,PMARGIN+24,y+34+28,bodyW-48,{font:'regular',size:15,lineHeight:1.5,tracking:6,color:[30,60,90]});
+    drawText(doc,'Nota:',PMARGIN+24,y+34,null,{font:'bold',size:16,lineHeight:1.5,tracking:6,color:GREEN});
+    drawText(doc,alerta,PMARGIN+24,y+34+28,bodyW-48,{font:'regular',size:15,lineHeight:1.5,tracking:6,color:[12,35,24]});
     y+=boxH+30;
   });
 
