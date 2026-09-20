@@ -1445,6 +1445,7 @@ async function runReporte(){
       action:'guardarReporteMantenimiento',
       empresa: g('r-nom'),
       fechaVisita: fechaES(g('r-fecha')),
+      fechaISO: g('r-fecha'),   // yyyy-mm-dd, para que el CRM guarde la col A como FECHA real
       responsable: g('r-resp'),
       tareasRutina: tareasRutinaFijas.join(' | '),
       trabajosEspecificos: bloqueB.map(x=>`${x.titulo}: ${x.dato}`).join(' | '),
