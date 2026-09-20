@@ -1192,6 +1192,13 @@ async function handleFotoRUpload(event, idx){
 // ── Selector de clientes (desde Cl. Mantenimiento) ───────────
 let CLIENTES_MANTENIMIENTO=[];
 let ultimoReporteURL=null;
+let ultimoReportePDF=null; // {base64, filename} del último reporte generado, para compartir el archivo
+
+function b64ToFile(b64, filename, mime){
+  const bin=atob(b64), len=bin.length, arr=new Uint8Array(len);
+  for(let i=0;i<len;i++) arr[i]=bin.charCodeAt(i);
+  return new File([arr], filename||'reporte.pdf', {type:mime||'application/pdf'});
+}
 const DRAFT_PREFIX='p212_draft_reporte_';
 let draftSaveTimer=null;
 
@@ -1298,12 +1305,28 @@ function recuperarDraft(){
 }
 
 // ── Compartir por WhatsApp ────────────────────────────────────
-function compartirReportePorWhatsapp(){
-  if(!ultimoReporteURL){ alert('Todavía no hay un reporte guardado para compartir.'); return; }
+// Preferido (celular): comparte el PDF como ARCHIVO adjunto vía el menú nativo, sin
+// exponer Drive. Fallback (escritorio o sin soporte): abre WhatsApp con el link al PDF.
+async function compartirReportePorWhatsapp(){
   const cliente=g('r-nom');
-  const texto=`Hola, te comparto el reporte de mantenimiento de ${cliente} del ${fechaES(g('r-fecha'))}:\n${ultimoReporteURL}`;
+  const texto=`Hola, te comparto el reporte de mantenimiento de ${cliente} del ${fechaES(g('r-fecha'))}.`;
+
+  // 1) Compartir el archivo PDF directamente (móvil)
+  if(ultimoReportePDF && ultimoReportePDF.base64){
+    try{
+      const file=b64ToFile(ultimoReportePDF.base64, ultimoReportePDF.filename);
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:'Reporte de mantenimiento', text:texto});
+        return;
+      }
+    }catch(e){ if(e && e.name==='AbortError') return; /* si falla, cae al link */ }
+  }
+
+  // 2) Fallback: link al PDF en Drive
+  if(!ultimoReporteURL){ alert('Generá y subí el reporte antes de compartirlo.'); return; }
+  const linkTxt=texto+'\n'+ultimoReporteURL;
   const contacto=(g('r-cont')||'').replace(/[^\d]/g,'');
-  const url=contacto ? `https://wa.me/${contacto}?text=${encodeURIComponent(texto)}` : `https://wa.me/?text=${encodeURIComponent(texto)}`;
+  const url=contacto ? `https://wa.me/${contacto}?text=${encodeURIComponent(linkTxt)}` : `https://wa.me/?text=${encodeURIComponent(linkTxt)}`;
   window.open(url,'_blank');
 }
 
@@ -1420,6 +1443,7 @@ async function runReporte(){
       cuit: g('r-cuit'),
       textoIA, base64, filename: pdfFilename
     };
+    ultimoReportePDF={base64, filename:pdfFilename}; // para compartir el archivo por WhatsApp
 
     st.className='status on';
     st.textContent='✓ PDF generado y descargado. Revisalo y tocá "Subir a Drive y CRM" para guardarlo.';
