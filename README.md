@@ -1,42 +1,42 @@
 # Generador 212 Paisajismo
 
 Herramienta interna para generar presupuestos y reportes de mantenimiento en PDF.
+Sitio estático (HTML/JS) desplegado en Vercel, con funciones serverless que hacen
+de proxy a la API de Anthropic para la redacción, y un webhook de Google Apps
+Script ("Panel Vivero 212") que hace de CRM (clientes, reportes, leads).
 
-## Deploy en Vercel (una sola vez)
+## Deploy en Vercel
 
 ### 1. Subir a GitHub
-1. Crear un repo nuevo en github.com (ej: `generador-212`)
-2. Subir estos archivos al repo
+Repo privado `donatolacedonia25/GeneradorPresupuestos` → autodeploy en Vercel.
+Cada push a `main` va a producción; cada rama genera una URL de *preview*.
 
-### 2. Conectar con Vercel
-1. Ir a vercel.com → New Project
-2. Importar el repo de GitHub
-3. Deploy (sin cambiar nada)
+### 2. Variable de entorno
+En Vercel → Settings → Environment Variables:
+- **Name:** `ANTHROPIC_API_KEY`
+- **Value:** tu API key de Anthropic (console.anthropic.com → API Keys)
 
-### 3. Configurar la API key de Gemini
-1. En Vercel → tu proyecto → Settings → Environment Variables
-2. Agregar:
-   - **Name:** `GEMINI_API_KEY`
-   - **Value:** tu API key de Google AI Studio
-3. Redeploy (Settings → Deployments → Redeploy)
-
-### Obtener la API key de Gemini
-1. Ir a aistudio.google.com
-2. Get API Key → Create API Key
-3. Copiar el valor (empieza con `AIza...`)
+La clave vive sólo en Vercel. Nunca se pide ni se acepta en el chat ni en el front.
 
 ## Uso
-- Abrir la URL de Vercel desde cualquier dispositivo
-- Tab "Presupuesto": completar campos → Generar con IA → descarga el PDF
-- Tab "Reporte": completar visita + fotos → Generar con IA → descarga el PDF
-- "Generar PDF (sin IA)": genera el PDF con el texto que haya en los campos, sin llamar a Gemini
+- Abrir la URL de Vercel desde cualquier dispositivo (pensado para celular).
+- Tab **Presupuesto**: completar campos → Generar con IA → descarga el PDF.
+- Tab **Mantenimiento**: completar visita + fotos → Generar reporte → PDF, subida
+  a Drive y escritura en el CRM, compartir por WhatsApp.
+- Tab **Mensajes**: redacción de mensajes B2B (usa `instrucciones.json`).
+- Tab **POS**: iframe embebido.
+- "Generar PDF (sin IA)" (en Presupuesto): arma el PDF con el texto de los campos,
+  sin llamar a la API.
 
 ## Estructura
 ```
 /
-├── index.html          # Formulario completo
+├── index.html          # App completa (tabs Presupuesto / Mantenimiento / POS)
+├── contacto.html       # Tab Mensajes
+├── instrucciones.json  # "Cerebro" B2B que lee api/contacto.js
 ├── api/
-│   └── generar.js      # Serverless function (proxy a Gemini)
+│   ├── generar.js      # Serverless: proxy a Anthropic (presupuestos y reportes)
+│   └── contacto.js     # Serverless: proxy a Anthropic (mensajes)
 ├── vercel.json         # Config Vercel
 └── README.md
 ```

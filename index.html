@@ -965,13 +965,13 @@ function renderFotos(){
 
 // ── Fotos reporte ────────────────────────────────────────────
 // ── Definición de los 3 bloques del reporte de mantenimiento ──
-const BLOQUE_A = [
+let BLOQUE_A = [
   {id:'a1', label:'Gestión Hídrica y Monitoreo', texto:'Evaluación del nivel de humedad en sustrato y ajuste de hidratación manual para prevenir estrés hídrico.'},
   {id:'a2', label:'Poda Sanitaria y Despeje', texto:'Remoción técnica de tejido vegetal deteriorado para mitigar focos infecciosos y optimizar el desarrollo del follaje sano.'},
   {id:'a3', label:'Acondicionamiento Foliar', texto:'Limpieza profunda de hojas y pulverización para maximizar la captación de luz y la eficiencia fotosintética en interiores.'},
   {id:'a4', label:'Control Fitosanitario Preventivo', texto:'Chequeo visual de plagas y enfermedades. Ante cualquier detección, se procede con la alerta correspondiente y el cuidado específico.'}
 ];
-const BLOQUE_B = [
+let BLOQUE_B = [
   {id:'b1', label:'Consolidación de trasplantes', ph:'ej. Potus en recepción'},
   {id:'b2', label:'Rotación estratégica de ejemplares', ph:'ej. Ficus para buscar luz natural'},
   {id:'b3', label:'Perfilado y control de volumen', ph:'ej. Macetas de pasillo principal'},
@@ -980,7 +980,7 @@ const BLOQUE_B = [
   {id:'b6', label:'Aprovechamiento de reproducción natural', ph:'ej. Monsteras para vestir sector nuevo'},
   {id:'b7', label:'Otro', custom:true}
 ];
-const BLOQUE_C = [
+let BLOQUE_C = [
   {id:'c1', label:'Detección temprana de plaga/hongo', ph:'Indicar sector'},
   {id:'c2', label:'Falla en infraestructura/maceta deteriorada', ph:'Indicar cuál'},
   {id:'c3', label:'Ejemplar con estrés agudo irrecuperable', ph:'Sugerir reposición'},
@@ -2230,8 +2230,32 @@ async function pdfReporte(){
   return doc;
 }
 
+// ── Carga del banco de tareas desde el Sheet, con fallback a los bancos por defecto ──
+// El webhook debe exponer action=leerBanco devolviendo {ok:true, items:[{bloque,id,etiqueta,texto,placeholder,activo}]}.
+// bloque: "rutina" | "especifica" | "alerta". Si no existe la acción o no hay red,
+// se usan los BLOQUE_A/B/C hardcodeados de arriba (cero regresión).
+async function cargarBanco(){
+  try{
+    const res = await fetch(WEBHOOK_URL + '?action=leerBanco');
+    const d = await res.json();
+    const items = (d && (d.items || d.banco)) || (Array.isArray(d) ? d : null);
+    if(Array.isArray(items) && items.length){
+      const norm = s => String(s==null?'':s).trim().toLowerCase();
+      const activo = it => { const a=it.activo; return a===undefined || a===true || a===1 || ['','si','sí','true','1','x'].includes(norm(a)); };
+      const rows = items.filter(it => it && it.id && it.bloque && activo(it));
+      const rutina = rows.filter(it=>norm(it.bloque).startsWith('rut')).map(it=>({id:String(it.id), label:it.etiqueta||it.label||'', texto:it.texto||''}));
+      const espec  = rows.filter(it=>norm(it.bloque).startsWith('esp')).map(it=>({id:String(it.id), label:it.etiqueta||it.label||'', ph:it.placeholder||it.ph||'', custom: it.custom===true||['si','sí','true','1'].includes(norm(it.custom))||norm(it.id)==='otro'}));
+      const alerta = rows.filter(it=>norm(it.bloque).startsWith('ale')).map(it=>({id:String(it.id), label:it.etiqueta||it.label||'', ph:it.placeholder||it.ph||''}));
+      if(rutina.length) BLOQUE_A = rutina;
+      if(espec.length){ if(!espec.some(x=>x.custom)) espec.push({id:'otro', label:'Otro', custom:true}); BLOQUE_B = espec; }
+      if(alerta.length) BLOQUE_C = alerta;
+    }
+  }catch(e){ /* sin conexión o acción inexistente: quedan los bancos por defecto */ }
+  renderBloqueA();renderBloqueB();renderBloqueC();
+}
+
 // Init
-renderBloqueA();renderBloqueB();renderBloqueC();
+cargarBanco();
 cargarClientesMantenimiento();
 addItem();addItem();addItem();
 addFoto();addFoto();
