@@ -1371,28 +1371,6 @@ async function guardarNotasInternas(){
 
 let pendingReporteUpload=null; // guarda el payload del último PDF generado, listo para subir manualmente
 
-// E5: trae las cifras de continuidad REALES desde el CRM (nunca inventadas por la IA).
-// - PRÓXIMA VISITA: col E del cliente en Cl. Mantenimiento (ya viene en leerClientesMantenimiento).
-// - N.º DE VISITA: cantidad de reportes previos de esa empresa (listarReportes) + el actual.
-// - CLIENTE DESDE: hoy el backend no expone fechaIngreso; se omite hasta agregarlo (no se inventa).
-async function traerCifrasContinuidad(empresa){
-  const norm=s=>String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  const emp=norm(empresa);
-  const fechaAA=v=>{ const d=new Date(v); return isNaN(d)?'':d.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}); };
-  let proximaVisita='', visitaNumero='';
-  const cli=(CLIENTES_MANTENIMIENTO||[]).find(c=>norm(c.empresa)===emp);
-  if(cli && cli.proximaVisita) proximaVisita=fechaAA(cli.proximaVisita);
-  try{
-    const res=await fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'listarReportes'})});
-    const d=await res.json();
-    if(d && d.ok && Array.isArray(d.reportes)){
-      const previos=d.reportes.filter(r=>norm(r.empresa)===emp).length;
-      visitaNumero=String(previos+1);
-    }
-  }catch(e){ /* sin red: queda sin n.º de visita, no se inventa */ }
-  return {proximaVisita, visitaNumero, clienteDesde:''};
-}
-
 async function runReporte(){
   const btn=document.getElementById('r-btn'), st=document.getElementById('r-st'), wppBtn=document.getElementById('r-wpp-btn');
   const uploadBtn=document.getElementById('r-upload-btn'), uploadSt=document.getElementById('r-upload-st');
@@ -1418,12 +1396,12 @@ async function runReporte(){
     if(!d.ok) throw new Error(d.error||'Error al redactar el reporte');
     TX.reporte=d.contenido;
     TX.reporte.tareasRutinaFijas = tareasRutinaFijas;
-    // E5: pisamos las cifras de continuidad con datos REALES del CRM (o las vaciamos
-    // si no hay dato) para que la IA nunca meta cifras inventadas en el PDF.
-    const cif = await traerCifrasContinuidad(g('r-nom'));
-    TX.reporte.proximaVisita = cif.proximaVisita;
-    TX.reporte.visitaNumero  = cif.visitaNumero;
-    TX.reporte.clienteDesde  = cif.clienteDesde;
+    // Cifras de continuidad: NO se muestran. No hay histórico real de visitas y la
+    // próxima visita del CRM es aproximada y cambia por logística. Las vaciamos siempre
+    // para que ni la IA ni el CRM metan cifras poco confiables en el PDF.
+    TX.reporte.proximaVisita = '';
+    TX.reporte.visitaNumero  = '';
+    TX.reporte.clienteDesde  = '';
     const textoIA = JSON.stringify(d.contenido);
     st.textContent='✓ Texto listo. Armando PDF...';
 
@@ -2230,7 +2208,6 @@ async function pdfReporte(){
   const contacto=g('r-cont');
   const ubic=g('r-ubic');
   const cuit=g('r-cuit');
-  const responsable=g('r-resp');
   const fechaVisita=fechaES(g('r-fecha'));
   let page=0;
 
@@ -2276,13 +2253,12 @@ async function pdfReporte(){
       doc.setGState(new doc.GState({opacity:1}));
     }catch(e){ fillPage(NIGHT); }
   }
-  try{ drawImageFit(doc,{data:LOGO_WHITE,w:170,h:220}, RW-RM-120, 64, 120, 132); }catch(e){}
+  try{ drawImageFit(doc,{data:LOGO_WHITE,w:170,h:220}, RW-RM-250, 44, 250, 320); }catch(e){}
   let cy=Math.round(RH*0.50);
   cy=eyebrow('Reporte de mantenimiento', RM, cy, true);
   cy=T(nombre, RM, cy+64, {font:'serif', size:50, lh:1.12, color:CREAM, w:CW});
   cy=T('Visita del '+fechaVisita, RM, cy+34, {font:'regular', size:19, tracking:20, color:ARENA, w:CW});
   if(ubic) cy=T(ubic, RM, cy+4, {font:'regular', size:15, color:ARENA, w:CW});
-  if(responsable) T('A cargo de '+responsable, RM, cy+26, {font:'regular', size:15, color:ARENA, w:CW});
   footer(true);
 
   // ══ CUERPO (crema) ══
