@@ -510,6 +510,7 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
         </select>
       </div>
       <div><label>Fecha de visita</label><input type="date" id="r-fecha"></div>
+      <div><label>Próxima visita <span style="color:#999;font-weight:400">(interno, no sale en el PDF)</span></label><input type="date" id="r-proxima"></div>
       <div><label>Ubicación</label><input id="r-ubic" placeholder="Se autocompleta al elegir el cliente"></div>
       <div><label>CUIT/CUIL</label><input id="r-cuit" placeholder="Se autocompleta si está cargado en Sheets"></div>
     </div>
@@ -1224,6 +1225,7 @@ async function onSeleccionarClienteMantenimiento(){
   document.getElementById('r-cont').value=c.contacto||'';
   document.getElementById('r-ubic').value=c.direccion||'';
   document.getElementById('r-cuit').value=c.cuit||'';
+  document.getElementById('r-proxima').value=toISODate(c.proximaVisita)||'';
   if(!document.getElementById('r-fecha').value){
     document.getElementById('r-fecha').value=new Date().toISOString().slice(0,10);
   }
@@ -1246,12 +1248,15 @@ async function onSeleccionarClienteMantenimiento(){
   }catch(e){}
 }
 
+// Convierte una fecha cualquiera (string del CRM o ISO) a yyyy-mm-dd para un <input type=date>
+function toISODate(v){ if(!v) return ''; const d=new Date(v); if(isNaN(d)) return ''; const off=d.getTimezoneOffset(); const l=new Date(d.getTime()-off*60000); return l.toISOString().slice(0,10); }
+
 // ── Draft local (autoguardado + recuperación sin conexión) ───
 function draftKey(empresa){return DRAFT_PREFIX+(empresa||'sin_cliente').replace(/\s+/g,'_');}
 
 function recopilarDatosReporte(){
   return {
-    empresa:g('r-nom'), contacto:g('r-cont'), fecha:g('r-fecha'), ubicacion:g('r-ubic'), cuit:g('r-cuit'), responsable:g('r-resp'),
+    empresa:g('r-nom'), contacto:g('r-cont'), fecha:g('r-fecha'), proxima:g('r-proxima'), ubicacion:g('r-ubic'), cuit:g('r-cuit'), responsable:g('r-resp'),
     bloqueA: BLOQUE_A.map(it=>{const c=document.getElementById(it.id);return c?c.checked:false;}),
     bloqueB: BLOQUE_B.map(it=>{
       const c=document.getElementById(it.id);
@@ -1293,6 +1298,7 @@ function aplicarDatosReporte(d){
   if(d.empresa) document.getElementById('r-nom').value=d.empresa;
   document.getElementById('r-cont').value=d.contacto||'';
   document.getElementById('r-fecha').value=d.fecha||'';
+  document.getElementById('r-proxima').value=d.proxima||'';
   document.getElementById('r-ubic').value=d.ubicacion||'';
   document.getElementById('r-cuit').value=d.cuit||'';
   document.getElementById('r-resp').value=d.responsable||'Agustín';
@@ -1446,6 +1452,8 @@ async function runReporte(){
       action:'guardarReporteMantenimiento',
       empresa: g('r-nom'),
       fechaVisita: fechaES(g('r-fecha')),
+      fechaISO: g('r-fecha'),   // yyyy-mm-dd, para que el CRM guarde la col A como FECHA real
+      proximaVisitaISO: g('r-proxima'),  // interno: se guarda en el CRM, no sale en el PDF
       responsable: g('r-resp'),
       tareasRutina: tareasRutinaFijas.join(' | '),
       trabajosEspecificos: bloqueB.map(x=>`${x.titulo}: ${x.dato}`).join(' | '),
@@ -1487,10 +1495,12 @@ async function subirReporteMantenimiento(){
     uploadSt.className='status on';
     uploadSt.textContent= editando ? '✓ Reporte actualizado: se reemplazó el PDF y quedó en Borrador.' : '✓ Reporte subido a Drive y guardado en el CRM (queda en Borrador).';
     wppBtn.style.display='block';
-    const datosGuardar = pendingReporteUpload.datos, empresaGuardar = pendingReporteUpload.empresa;
+    const datosGuardar = pendingReporteUpload.datos, empresaGuardar = pendingReporteUpload.empresa, proximaGuardar = pendingReporteUpload.proximaVisitaISO;
     pendingReporteUpload=null;
     if(editando){ modoEdicionReporte=null; }
     else { persistirDatosReporte(empresaGuardar, datosGuardar); } // best-effort, para editarlo luego
+    // Próxima visita: tracking interno en el CRM (no sale en el PDF). Best-effort.
+    if(proximaGuardar){ try{ fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'guardarProximaVisita',empresa:empresaGuardar,proximaVisitaISO:proximaGuardar})}); }catch(e){} }
   }catch(e){
     uploadSt.className='status on err';
     uploadSt.textContent='⚠️ No se pudo subir ('+e.message+'). Tocá "Subir" de nuevo cuando tengas señal.';
