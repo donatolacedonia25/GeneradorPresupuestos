@@ -540,6 +540,18 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
     <div class="fotos-grid" id="r-fotos-grid"></div>
     <button class="add-btn" style="margin-top:16px" onclick="addFotoR()">+ Agregar foto</button>
   </div>
+  <div class="card" style="border:1px dashed #b7cdbe;background:#f6faf7">
+    <h2>Reporte de varias sucursales (opcional)</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:10px">Para un cliente con más de una sede (ej. Shell). Cargá una sucursal arriba, agregala, cargá la siguiente y generá <strong>un solo PDF</strong> con un bloque por sucursal. Cada sucursal se actualiza igual en el CRM por separado.</p>
+    <div class="form-grid">
+      <div class="full"><label>Nombre del reporte (va en la portada)</label><input id="r-conjunto-nombre" placeholder="Ej: Shell"></div>
+    </div>
+    <button class="add-btn" style="width:100%;margin-top:10px" id="r-conjunto-add" onclick="agregarSucursalAlConjunto()">+ Agregar esta sucursal al reporte conjunto</button>
+    <div id="r-conjunto-lista" style="margin-top:12px"></div>
+    <button class="btn" id="r-conjunto-generar" style="display:none;margin-top:10px;background:#2D6A4F" onclick="generarReporteConjunto()">✦ Generar reporte conjunto</button>
+    <div class="status" id="r-conjunto-st"></div>
+  </div>
+
   <div class="status" id="r-st"></div>
   <button class="btn" id="r-btn" onclick="runReporte()">✦ Generar Reporte PDF</button>
   <button class="btn" id="r-upload-btn" style="display:none;background:#1B4332" onclick="subirReporteMantenimiento()">☁️ Subir a Drive y CRM</button>
@@ -1495,18 +1507,122 @@ async function subirReporteMantenimiento(){
     uploadSt.className='status on';
     uploadSt.textContent= editando ? '✓ Reporte actualizado: se reemplazó el PDF y quedó en Borrador.' : '✓ Reporte subido a Drive y guardado en el CRM (queda en Borrador).';
     wppBtn.style.display='block';
-    const datosGuardar = pendingReporteUpload.datos, empresaGuardar = pendingReporteUpload.empresa, proximaGuardar = pendingReporteUpload.proximaVisitaISO;
+    const pend = pendingReporteUpload;
     pendingReporteUpload=null;
     if(editando){ modoEdicionReporte=null; }
-    else { persistirDatosReporte(empresaGuardar, datosGuardar); } // best-effort, para editarlo luego
-    // Próxima visita: tracking interno en el CRM (no sale en el PDF). Best-effort.
-    if(proximaGuardar){ try{ fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'guardarProximaVisita',empresa:empresaGuardar,proximaVisitaISO:proximaGuardar})}); }catch(e){} }
+    else { persistirDatosReporte(pend.empresa, pend.datos); } // best-effort, para editarlo luego
+    if(pend.esConjunto && Array.isArray(pend.sedesCRM)){
+      // Reporte conjunto: actualizar CADA sucursal por separado en el CRM (última visita, próxima, PDF)
+      pend.sedesCRM.forEach(sc=>{ try{ fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'actualizarClienteVisita',empresa:sc.empresa,fechaISO:pend.fechaISO,proximaVisitaISO:sc.proximaVisitaISO,linkPDF:d2.url})}); }catch(e){} });
+      sedesConjunto=[]; renderPanelConjunto(); const cn=document.getElementById('r-conjunto-nombre'); if(cn) cn.value='';
+    } else if(pend.proximaVisitaISO){
+      // Próxima visita: tracking interno en el CRM (no sale en el PDF). Best-effort.
+      try{ fetch(WEBHOOK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'guardarProximaVisita',empresa:pend.empresa,proximaVisitaISO:pend.proximaVisitaISO})}); }catch(e){}
+    }
   }catch(e){
     uploadSt.className='status on err';
     uploadSt.textContent='⚠️ No se pudo subir ('+e.message+'). Tocá "Subir" de nuevo cuando tengas señal.';
   }finally{
     uploadBtn.disabled=false; uploadBtn.textContent='☁️ Subir a Drive y CRM';
   }
+}
+
+// ── Reporte conjunto de varias sucursales (mismo dueño) ──────────────────────
+let sedesConjunto=[]; // [{nombre, intro, tareasRutinaFijas, trabajosEspecificosTexto, alertasTexto, proximaVisitaISO, datos}]
+
+function limpiarBloquesReporte(){
+  BLOQUE_A.forEach(it=>{const c=document.getElementById(it.id); if(c) c.checked=false;});
+  BLOQUE_B.forEach(it=>{const c=document.getElementById(it.id); if(c){c.checked=false; toggleCampo(it.id);} const t=document.getElementById(it.id+'-titulo'); if(t) t.value=''; const dd=document.getElementById(it.id+'-dato'); if(dd) dd.value='';});
+  BLOQUE_C.forEach(it=>{const c=document.getElementById(it.id); if(c){c.checked=false; toggleCampo(it.id);} const dd=document.getElementById(it.id+'-dato'); if(dd) dd.value='';});
+  const sel=document.getElementById('r-select'); if(sel) sel.value='';
+  ['r-nom','r-cont','r-ubic','r-cuit','r-proxima'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+}
+
+function renderPanelConjunto(){
+  const cont=document.getElementById('r-conjunto-lista'), gen=document.getElementById('r-conjunto-generar');
+  if(!cont) return;
+  if(!sedesConjunto.length){ cont.innerHTML=''; if(gen) gen.style.display='none'; return; }
+  cont.innerHTML='<div style="font-size:12px;color:#1B4332;font-weight:600;margin-bottom:6px">Sucursales en este reporte:</div>'+
+    sedesConjunto.map((s,i)=>`<div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #e5ede5;border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:13px"><span>${esc(s.nombre)}</span><button class="rep-btn" style="background:#c0392b;padding:4px 10px;font-size:12px" onclick="quitarSedeConjunto(${i})">Quitar</button></div>`).join('');
+  if(gen) gen.style.display = sedesConjunto.length>=2 ? 'block' : 'none';
+}
+function quitarSedeConjunto(i){ sedesConjunto.splice(i,1); renderPanelConjunto(); }
+
+async function agregarSucursalAlConjunto(){
+  const st=document.getElementById('r-conjunto-st');
+  const empresa=g('r-nom');
+  if(!empresa){ st.className='status on err'; st.textContent='Elegí la sucursal arriba (y cargá sus tareas) antes de agregarla.'; return; }
+  if(sedesConjunto.some(s=>s.nombre===empresa)){ st.className='status on err'; st.textContent='Esa sucursal ya está en el reporte.'; return; }
+  const addBtn=document.getElementById('r-conjunto-add');
+  addBtn.disabled=true; addBtn.textContent='Procesando...';
+  st.className='status on'; st.textContent='✦ La IA está redactando esta sucursal...';
+  try{
+    const bloqueB=recopilarBloque(BLOQUE_B);
+    const bloqueC=recopilarBloque(BLOQUE_C);
+    const tareasRutinaFijas=recopilarTareasRutinaFijas();
+    const res=await fetch('/api/generar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({tipo:'reporte',datos:{
+        nombreCliente:empresa, fechaVisita:fechaES(g('r-fecha')), ubicacion:g('r-ubic'),
+        trabajosEspecificos: bloqueB.map(x=>`${x.titulo}: ${x.dato}`).join('\n'),
+        novedades: bloqueC.map(x=>`${x.titulo}: ${x.dato}`).join('\n')
+      }})});
+    const d=await res.json();
+    if(!d.ok) throw new Error(d.error||'Error al redactar');
+    sedesConjunto.push({
+      nombre: empresa,
+      intro: d.contenido.intro||'',
+      tareasRutinaFijas,
+      trabajosEspecificosTexto: d.contenido.trabajosEspecificosTexto||'',
+      alertasTexto: d.contenido.alertasTexto||'',
+      proximaVisitaISO: g('r-proxima'),
+      datos: (function(){ const dd=recopilarDatosReporte(); dd.fotos=[]; return dd; })()
+    });
+    renderPanelConjunto();
+    limpiarBloquesReporte();
+    st.className='status on'; st.textContent='✓ '+empresa+' agregada. Elegí la próxima sucursal y cargá sus tareas.';
+  }catch(e){ st.className='status on err'; st.textContent='No se pudo agregar: '+e.message; }
+  finally{ addBtn.disabled=false; addBtn.textContent='+ Agregar esta sucursal al reporte conjunto'; }
+}
+
+async function generarReporteConjunto(){
+  const st=document.getElementById('r-conjunto-st');
+  const nombre=(g('r-conjunto-nombre')||'').trim();
+  if(!nombre){ st.className='status on err'; st.textContent='Escribí el nombre del reporte (ej: Shell).'; return; }
+  if(sedesConjunto.length<2){ st.className='status on err'; st.textContent='Agregá al menos 2 sucursales.'; return; }
+  const gen=document.getElementById('r-conjunto-generar');
+  gen.disabled=true; gen.textContent='Generando...';
+  st.className='status on'; st.textContent='Armando el PDF conjunto...';
+  try{
+    TX.reporteConjunto = sedesConjunto.map(s=>({nombre:s.nombre, intro:s.intro, tareasRutinaFijas:s.tareasRutinaFijas, trabajosEspecificosTexto:s.trabajosEspecificosTexto, alertasTexto:s.alertasTexto}));
+    document.getElementById('r-nom').value=nombre; // nombre de portada
+    const fotosBak=rFotos; rFotos=[]; // el conjunto no lleva fotos
+    let doc;
+    try{ doc=await pdfReporte(); } finally{ rFotos=fotosBak; }
+    const pdfFilename='Reporte_212_'+nombre.replace(/\s+/g,'_')+'_'+g('r-fecha')+'.pdf';
+    const base64=doc.output('datauristring').split(',')[1];
+    pendingReporteUpload={
+      action:'guardarReporteMantenimiento',
+      empresa: nombre,
+      fechaVisita: fechaES(g('r-fecha')),
+      fechaISO: g('r-fecha'),
+      responsable: g('r-resp'),
+      tareasRutina: sedesConjunto.map(s=>s.nombre).join(' + '),
+      trabajosEspecificos: sedesConjunto.map(s=>s.nombre+': '+((s.trabajosEspecificosTexto||'').split('|||').join(' | '))).join('  ||  '),
+      alertas: sedesConjunto.map(s=>(s.alertasTexto||'').split('|||').join(' | ')).filter(Boolean).join('  ||  '),
+      cuit:'',
+      textoIA: JSON.stringify({conjunto:true, sedes:TX.reporteConjunto}),
+      base64, filename: pdfFilename,
+      datos: { conjunto:true, nombre, fecha:g('r-fecha'), responsable:g('r-resp'), sedes: sedesConjunto },
+      sedesCRM: sedesConjunto.map(s=>({empresa:s.nombre, proximaVisitaISO:s.proximaVisitaISO||''})),
+      esConjunto:true
+    };
+    ultimoReportePDF={base64, filename:pdfFilename};
+    TX.reporteConjunto=null;
+    st.className='status on'; st.textContent='✓ PDF conjunto generado. Tocá "Subir a Drive y CRM" abajo.';
+    document.getElementById('r-upload-btn').style.display='block';
+    try{ window.scrollTo(0, document.body.scrollHeight); }catch(e){}
+  }catch(e){ TX.reporteConjunto=null; st.className='status on err'; st.textContent='Error al generar: '+e.message; }
+  finally{ gen.disabled=false; gen.textContent='✦ Generar reporte conjunto'; }
 }
 
 // ── MANTENIMIENTO ──────────────────────────────────────────────
@@ -2345,42 +2461,45 @@ async function pdfReporte(){
     y+=16; rule(RM, y-8, CW, [214,205,190], 0.8); y+=14;
   }
 
-  const tareas=(tx.tareasRutinaFijas||[]).filter(Boolean);
-  const trabajos=(tx.trabajosEspecificosTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
-  const alertas=(tx.alertasTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
-  const intro=(tx.intro||'').trim();
+  // ── Cuerpo: una sede (normal) o varias (reporte conjunto de sucursales del mismo dueño) ──
+  // Si TX.reporteConjunto es un array de sedes, se dibuja un bloque por sucursal con su nombre.
+  const sedes = (Array.isArray(TX.reporteConjunto) && TX.reporteConjunto.length)
+    ? TX.reporteConjunto
+    : [{ nombre:'', intro:tx.intro, tareasRutinaFijas:tx.tareasRutinaFijas, trabajosEspecificosTexto:tx.trabajosEspecificosTexto, alertasTexto:tx.alertasTexto }];
+  const multi = sedes.length>1;
 
   beginPage('En esta visita', nombre);
-  if(intro){ y=T(intro, RM, y, {font:'regular', size:16.5, lh:1.55, color:INK, w:CW}); y+=30; }
 
-  // ── Cifras de continuidad (se completan desde el CRM; se muestran solo las que existen) ──
-  const cifras=[];
-  if(tx.clienteDesde)  cifras.push({num:tx.clienteDesde,  lab:'CLIENTE DESDE'});
-  if(tx.visitaNumero)  cifras.push({num:tx.visitaNumero,  lab:'N.º DE VISITA'});
-  if(tx.proximaVisita) cifras.push({num:tx.proximaVisita, lab:'PRÓXIMA VISITA'});
-  if(cifras.length){
-    ensure(150);
-    rule(RM,y,CW,ARENA,1.5); y+=44;
-    const cols=cifras.length, colW=CW/cols;
-    cifras.forEach((c,i)=>{
-      const cx=RM+i*colW+ (cols<3? (CW - cols*colW)/ (2*cols) *0 :0);
-      T(String(c.num), cx, y, {font:'serif', size:34, color:NIGHT});
-      T(c.lab, cx, y+26, {font:'medium', size:11, tracking:60, color:SOFT, w:colW-14});
-    });
-    y+=70; rule(RM,y,CW,ARENA,1.5); y+=34;
-  }
+  const alertasTodas=[]; // {sede, texto}
+  sedes.forEach((sede, si)=>{
+    const tareas=(sede.tareasRutinaFijas||[]).filter(Boolean);
+    const trabajos=(sede.trabajosEspecificosTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
+    const alertasSede=(sede.alertasTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
+    const intro=(sede.intro||'').trim();
 
-  if(tareas.length){ sectionLabel('Tareas de rutina'); tareas.forEach(bullet); y+=14; }
-  if(trabajos.length){ sectionLabel('Trabajos específicos'); trabajos.forEach(t=>{ const ci=t.indexOf(':'); if(ci>-1) labeled(t.slice(0,ci).trim(), t.slice(ci+1).trim()); else bullet(t); }); }
+    if(multi){
+      ensure(90);
+      if(si>0) y+=12;
+      y=T(sede.nombre||('Sucursal '+(si+1)), RM, y, {font:'serif', size:26, color:NIGHT});
+      y+=12; rule(RM,y,CW,NIGHT,2); y+=26;
+    }
+    if(intro){ y=T(intro, RM, y, {font:'regular', size:16.5, lh:1.55, color:INK, w:CW}); y+=multi?24:30; }
+    if(tareas.length){ sectionLabel('Tareas de rutina'); tareas.forEach(bullet); y+=14; }
+    if(trabajos.length){ sectionLabel('Trabajos específicos'); trabajos.forEach(t=>{ const ci=t.indexOf(':'); if(ci>-1) labeled(t.slice(0,ci).trim(), t.slice(ci+1).trim()); else bullet(t); }); }
+    alertasSede.forEach(a=> alertasTodas.push({sede:sede.nombre||'', texto:a}));
+    if(multi && si<sedes.length-1) y+=18;
+  });
   footer(false);
 
-  // ══ CONFIRMACIÓN — Alertas y detecciones (solo si hay) ══
-  if(alertas.length){
+  // ══ CONFIRMACIÓN — Alertas y detecciones (solo si hay; en conjunto se prefija la sucursal) ══
+  if(alertasTodas.length){
     page++; doc.addPage(); fillPage(CREAM);
     y=RM+34; y=eyebrow('Alertas y detecciones', RM, y, false);
     y=T('Lo que conviene tener en cuenta.', RM, y+50, {font:'serif', size:31, lh:1.16, color:NIGHT, w:CW}); y+=30;
-    alertas.forEach(a=>{
-      const ci=a.indexOf(':'); const label=ci>-1?a.slice(0,ci).trim():''; const txt=ci>-1?a.slice(ci+1).trim():a;
+    alertasTodas.forEach(item=>{
+      const a=item.texto;
+      const ci=a.indexOf(':'); let label=ci>-1?a.slice(0,ci).trim():''; const txt=ci>-1?a.slice(ci+1).trim():a;
+      if(multi && item.sede){ label = item.sede + (label?(' — '+label):''); }
       const w=CW-56, hl=label?measure(label,15,1.4,w):0, ht=measure(txt,15.5,1.5,w);
       const boxH=40+ (label?hl+8:0) + ht +34;
       if(y+boxH>RH-110){ footer(false); page++; doc.addPage(); fillPage(CREAM); y=RM+34; y=eyebrow('Alertas y detecciones', RM, y, false); y+=30; }
@@ -2568,6 +2687,7 @@ async function editarReporte(fila){
     if(!d.ok || !d.reporte){ alert(d.msg||'No se pudo abrir el reporte para editar.'); return; }
     const r=d.reporte;
     if(!r.datos){ alert('Este reporte se creó antes de la función de edición, así que no se puede reconstruir el formulario. Podés rehacerlo desde Mantenimiento y volver a subirlo.'); return; }
+    if(r.datos.conjunto){ alert('Los reportes de varias sucursales no se editan desde acá por ahora. Rehacelo desde "Reporte de varias sucursales" y volvé a subirlo.'); return; }
     aplicarDatosReporte(r.datos);
     modoEdicionReporte=fila;
     switchTab('mantenimiento');
