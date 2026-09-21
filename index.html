@@ -2345,42 +2345,45 @@ async function pdfReporte(){
     y+=16; rule(RM, y-8, CW, [214,205,190], 0.8); y+=14;
   }
 
-  const tareas=(tx.tareasRutinaFijas||[]).filter(Boolean);
-  const trabajos=(tx.trabajosEspecificosTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
-  const alertas=(tx.alertasTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
-  const intro=(tx.intro||'').trim();
+  // ── Cuerpo: una sede (normal) o varias (reporte conjunto de sucursales del mismo dueño) ──
+  // Si TX.reporteConjunto es un array de sedes, se dibuja un bloque por sucursal con su nombre.
+  const sedes = (Array.isArray(TX.reporteConjunto) && TX.reporteConjunto.length)
+    ? TX.reporteConjunto
+    : [{ nombre:'', intro:tx.intro, tareasRutinaFijas:tx.tareasRutinaFijas, trabajosEspecificosTexto:tx.trabajosEspecificosTexto, alertasTexto:tx.alertasTexto }];
+  const multi = sedes.length>1;
 
   beginPage('En esta visita', nombre);
-  if(intro){ y=T(intro, RM, y, {font:'regular', size:16.5, lh:1.55, color:INK, w:CW}); y+=30; }
 
-  // ── Cifras de continuidad (se completan desde el CRM; se muestran solo las que existen) ──
-  const cifras=[];
-  if(tx.clienteDesde)  cifras.push({num:tx.clienteDesde,  lab:'CLIENTE DESDE'});
-  if(tx.visitaNumero)  cifras.push({num:tx.visitaNumero,  lab:'N.º DE VISITA'});
-  if(tx.proximaVisita) cifras.push({num:tx.proximaVisita, lab:'PRÓXIMA VISITA'});
-  if(cifras.length){
-    ensure(150);
-    rule(RM,y,CW,ARENA,1.5); y+=44;
-    const cols=cifras.length, colW=CW/cols;
-    cifras.forEach((c,i)=>{
-      const cx=RM+i*colW+ (cols<3? (CW - cols*colW)/ (2*cols) *0 :0);
-      T(String(c.num), cx, y, {font:'serif', size:34, color:NIGHT});
-      T(c.lab, cx, y+26, {font:'medium', size:11, tracking:60, color:SOFT, w:colW-14});
-    });
-    y+=70; rule(RM,y,CW,ARENA,1.5); y+=34;
-  }
+  const alertasTodas=[]; // {sede, texto}
+  sedes.forEach((sede, si)=>{
+    const tareas=(sede.tareasRutinaFijas||[]).filter(Boolean);
+    const trabajos=(sede.trabajosEspecificosTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
+    const alertasSede=(sede.alertasTexto||'').split('|||').map(s=>s.trim()).filter(Boolean);
+    const intro=(sede.intro||'').trim();
 
-  if(tareas.length){ sectionLabel('Tareas de rutina'); tareas.forEach(bullet); y+=14; }
-  if(trabajos.length){ sectionLabel('Trabajos específicos'); trabajos.forEach(t=>{ const ci=t.indexOf(':'); if(ci>-1) labeled(t.slice(0,ci).trim(), t.slice(ci+1).trim()); else bullet(t); }); }
+    if(multi){
+      ensure(90);
+      if(si>0) y+=12;
+      y=T(sede.nombre||('Sucursal '+(si+1)), RM, y, {font:'serif', size:26, color:NIGHT});
+      y+=12; rule(RM,y,CW,NIGHT,2); y+=26;
+    }
+    if(intro){ y=T(intro, RM, y, {font:'regular', size:16.5, lh:1.55, color:INK, w:CW}); y+=multi?24:30; }
+    if(tareas.length){ sectionLabel('Tareas de rutina'); tareas.forEach(bullet); y+=14; }
+    if(trabajos.length){ sectionLabel('Trabajos específicos'); trabajos.forEach(t=>{ const ci=t.indexOf(':'); if(ci>-1) labeled(t.slice(0,ci).trim(), t.slice(ci+1).trim()); else bullet(t); }); }
+    alertasSede.forEach(a=> alertasTodas.push({sede:sede.nombre||'', texto:a}));
+    if(multi && si<sedes.length-1) y+=18;
+  });
   footer(false);
 
-  // ══ CONFIRMACIÓN — Alertas y detecciones (solo si hay) ══
-  if(alertas.length){
+  // ══ CONFIRMACIÓN — Alertas y detecciones (solo si hay; en conjunto se prefija la sucursal) ══
+  if(alertasTodas.length){
     page++; doc.addPage(); fillPage(CREAM);
     y=RM+34; y=eyebrow('Alertas y detecciones', RM, y, false);
     y=T('Lo que conviene tener en cuenta.', RM, y+50, {font:'serif', size:31, lh:1.16, color:NIGHT, w:CW}); y+=30;
-    alertas.forEach(a=>{
-      const ci=a.indexOf(':'); const label=ci>-1?a.slice(0,ci).trim():''; const txt=ci>-1?a.slice(ci+1).trim():a;
+    alertasTodas.forEach(item=>{
+      const a=item.texto;
+      const ci=a.indexOf(':'); let label=ci>-1?a.slice(0,ci).trim():''; const txt=ci>-1?a.slice(ci+1).trim():a;
+      if(multi && item.sede){ label = item.sede + (label?(' — '+label):''); }
       const w=CW-56, hl=label?measure(label,15,1.4,w):0, ht=measure(txt,15.5,1.5,w);
       const boxH=40+ (label?hl+8:0) + ht +34;
       if(y+boxH>RH-110){ footer(false); page++; doc.addPage(); fillPage(CREAM); y=RM+34; y=eyebrow('Alertas y detecciones', RM, y, false); y+=30; }
