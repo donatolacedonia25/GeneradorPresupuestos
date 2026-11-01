@@ -202,7 +202,6 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 <div class="tabs">
   <div class="tab active" data-tab="presupuesto" onclick="switchTab('presupuesto')">Presupuesto</div>
   <div class="tab" data-tab="mantenimiento" onclick="switchTab('mantenimiento')">Mantenimiento</div>
-  <div class="tab" data-tab="bandeja" onclick="switchTab('bandeja')">Bandeja</div>
   <a class="tab" href="/contacto.html">Mensajes</a>
   <div class="tab" data-tab="pos" onclick="switchTab('pos')">POS</div>
   <div class="user-chip" id="user-chip" style="display:none">
@@ -441,7 +440,11 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
 
 <div id="tab-mantenimiento" class="tab-content">
 <div class="container">
-  <div class="info">Reporte de visita de mantenimiento — completá los datos, agregá fotos con epígrafes → PDF listo. Si necesitás cotizar, abrí la calculadora.</div>
+<div class="info" style="border-left-color:#1B4332;background:#e9f2ec;color:#1B4332">
+    <strong>Los reportes de mantenimiento ahora se hacen en la app de Paisajismo 212</strong> (desde el 01/11/2026): registrás la visita, armás el reporte con fotos y queda la deuda del cliente en un solo lugar.
+    <a href="https://paisajismo-212.vercel.app/paisajismo/clientes?vista=mantenimientos" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;font-weight:700;color:#1B4332">Abrir Mantenimientos en la app →</a>
+  </div>
+  <div class="info">Acá queda la calculadora de mantenimiento, para cotizar.</div>
 
   <button class="add-btn" style="width:100%;margin-bottom:14px;font-size:13px;padding:10px" id="calc-toggle-btn" onclick="toggleCalculadora()">🧮 Calculadora de mantenimiento</button>
 
@@ -485,6 +488,7 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
   </div>
   </div>
 
+  <div id="reporte-viejo" hidden>
   <div id="draft-banner" class="info" style="display:none;border-left-color:#c0392b;background:#fdecea;color:#842029;cursor:pointer" onclick="recuperarDraft()">
     📝 Hay un reporte sin enviar guardado en este dispositivo — tocá para recuperarlo.
   </div>
@@ -557,6 +561,7 @@ input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner
   <button class="btn" id="r-upload-btn" style="display:none;background:#1B4332" onclick="subirReporteMantenimiento()">☁️ Subir a Drive y CRM</button>
   <div class="status" id="r-upload-st"></div>
   <button class="btn" id="r-wpp-btn" style="display:none;background:#25D366" onclick="compartirReportePorWhatsapp()">📱 Compartir por WhatsApp</button>
+  </div><!-- /reporte-viejo -->
 </div>
 </div>
 
